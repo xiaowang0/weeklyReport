@@ -9,134 +9,218 @@
         margin: 0 auto;
         padding: 20px;
     }
-    .task-form {
-        background: #f5f5f5;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-    }
-    .task-form h2 {
-        margin-top: 0;
-        margin-bottom: 20px;
-    }
-    .form-row {
+
+    /* 页面标题 */
+    .page-header {
         display: flex;
+        align-items: center;
         gap: 15px;
-        margin-bottom: 15px;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #e0e0e0;
+    }
+    .page-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+        color: white;
+    }
+    .page-title {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #333;
+    }
+    .page-date {
+        color: #888;
+        font-size: 0.9em;
+        margin-top: 3px;
+    }
+
+    /* 任务输入区 */
+    .task-input-area {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .task-input-row {
+        display: flex;
+        gap: 12px;
         flex-wrap: wrap;
     }
-    .form-group {
-        display: flex;
-        flex-direction: column;
+    .task-input-area input {
+        flex: 1;
+        min-width: 200px;
+        padding: 14px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1em;
+        transition: border-color 0.3s;
     }
-    .form-group label {
-        margin-bottom: 5px;
+    .task-input-area input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    .task-input-area select {
+        padding: 14px 18px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1em;
+        background: white;
+        cursor: pointer;
+        min-width: 150px;
+    }
+    .task-input-area button {
+        padding: 14px 28px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1em;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
         font-weight: bold;
     }
-    .form-group input, .form-group select {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
+    .task-input-area button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
-    .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-    }
-    .btn-primary {
-        background: #007bff;
-        color: white;
-    }
-    .btn-primary:hover {
-        background: #0056b3;
-    }
-    .btn-success {
-        background: #28a745;
-        color: white;
-    }
-    .btn-success:hover {
-        background: #1e7e34;
-    }
-    .btn-warning {
-        background: #ffc107;
-        color: #212529;
-    }
-    .btn-warning:hover {
-        background: #e0a800;
-    }
-    .btn-danger {
-        background: #dc3545;
-        color: white;
-    }
-    .btn-danger:hover {
-        background: #c82333;
-    }
-    .btn-sm {
-        padding: 5px 10px;
-        font-size: 12px;
-    }
+
+    /* 分类标题 */
     .category-section {
-        margin-bottom: 30px;
         background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         overflow: hidden;
     }
     .category-header {
-        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 12px;
         padding: 15px 20px;
         font-weight: bold;
         font-size: 16px;
+        border-left: 4px solid;
     }
-    .task-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .task-item {
+    .category-header.teaching { border-left-color: #ff6b6b; background: #fff5f5; }
+    .category-header.competition { border-left-color: #4ecdc4; background: #f0fffe; }
+    .category-header.career { border-left-color: #45b7d1; background: #f0f9ff; }
+    .category-header.research { border-left-color: #a55eea; background: #f9f0ff; }
+    .category-header.project { border-left-color: #26de81; background: #f0fff5; }
+    .category-header.team { border-left-color: #ffa502; background: #fffbf0; }
+    .category-header.school { border-left-color: #dfe6e9; background: #f8f9fa; }
+
+    /* 任务卡片 */
+    .task-card {
         display: flex;
-        justify-content: space-between;
         align-items: center;
         padding: 15px 20px;
         border-bottom: 1px solid #eee;
+        transition: all 0.3s;
     }
-    .task-item:last-child {
+    .task-card:hover {
+        background: #fafafa;
+    }
+    .task-card:last-child {
         border-bottom: none;
     }
+
+    .task-card-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+    }
+    .task-card-link:hover .task-card {
+        background: #f5f5f5;
+    }
+
     .task-info {
         flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 20px;
     }
     .task-name {
-        font-weight: bold;
-        margin-bottom: 5px;
+        font-weight: 500;
+        color: #333;
+        min-width: 200px;
     }
     .task-meta {
-        font-size: 12px;
-        color: #666;
+        font-size: 13px;
+        color: #888;
     }
     .task-meta span {
         margin-right: 15px;
     }
-    .priority-high { color: #dc3545; }
-    .priority-medium { color: #ffc107; }
-    .priority-low { color: #28a745; }
+
+    /* 优先级标签 */
+    .priority-tag {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+        min-width: 50px;
+        text-align: center;
+    }
+    .priority-tag.high {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        color: white;
+    }
+    .priority-tag.medium {
+        background: linear-gradient(135deg, #ffa502, #ff7f00);
+        color: white;
+    }
+    .priority-tag.low {
+        background: linear-gradient(135deg, #26de81, #20bf6b);
+        color: white;
+    }
+
+    /* 状态标签 */
     .status-tag {
         display: inline-block;
-        padding: 2px 8px;
-        border-radius: 3px;
+        padding: 4px 10px;
+        border-radius: 12px;
         font-size: 12px;
     }
-    .status-未开始 { background: #e9ecef; }
+    .status-未开始 { background: #e9ecef; color: #666; }
     .status-进行中 { background: #17a2b8; color: white; }
-    .status-已完成 { background: #28a745; color: white; }
-    .status-已暂停 { background: #ffc107; color: #212529; }
+    .status-已完成 { background: #26de81; color: white; }
+    .status-暂停 { background: #ffa502; color: white; }
+
+    /* 操作按钮 */
     .task-actions {
         display: flex;
         gap: 8px;
     }
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+    .btn:hover {
+        transform: scale(1.05);
+    }
+    .btn-success { background: #26de81; color: white; }
+    .btn-warning { background: #ffa502; color: white; }
+    .btn-danger { background: #ff6b6b; color: white; }
+    .btn-primary { background: #667eea; color: white; }
+
+    .empty-category {
+        padding: 30px 20px;
+        text-align: center;
+        color: #999;
+    }
+
+    /* 弹窗 */
     .modal {
         display: none;
         position: fixed;
@@ -155,7 +239,7 @@
     .modal-content {
         background: white;
         padding: 25px;
-        border-radius: 8px;
+        border-radius: 16px;
         max-width: 400px;
         width: 90%;
     }
@@ -164,94 +248,82 @@
     }
     .modal-content textarea {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
         resize: vertical;
         min-height: 80px;
         margin: 15px 0;
+    }
+    .modal-content textarea:focus {
+        outline: none;
+        border-color: #667eea;
     }
     .modal-actions {
         display: flex;
         justify-content: flex-end;
         gap: 10px;
     }
-    .empty-category {
-        padding: 20px;
-        text-align: center;
-        color: #999;
-    }
 </style>
 
 <div class="task-container">
-    <!-- 新增任务表单 -->
-    <div class="task-form">
-        <h2>新增任务</h2>
-        <form id="taskForm">
-            <div class="form-row">
-                <div class="form-group" style="flex: 2;">
-                    <label for="name">任务名称 *</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label for="category">所属分类 *</label>
-                    <select id="category" name="category" required>
-                        <option value="">请选择</option>
-                        <option value="教学">教学</option>
-                        <option value="竞赛">竞赛</option>
-                        <option value="就业">就业</option>
-                        <option value="科研">科研</option>
-                        <option value="项目">项目</option>
-                        <option value="职能组">职能组</option>
-                        <option value="院校支撑">院校支撑</option>
-                    </select>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label for="priority">优先级</label>
-                    <select id="priority" name="priority">
-                        <option value="中">中</option>
-                        <option value="高">高</option>
-                        <option value="低">低</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group" style="flex: 1;">
-                    <label for="plan_start">计划开始时间 *</label>
-                    <input type="date" id="plan_start" name="plan_start" required>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label for="plan_end">计划完成时间 *</label>
-                    <input type="date" id="plan_end" name="plan_end" required>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary">添加任务</button>
-        </form>
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <div class="page-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📋</div>
+        <div>
+            <div class="page-title">任务管理</div>
+        </div>
+    </div>
+
+    <!-- 任务输入区 -->
+    <div class="task-input-area">
+        <div class="task-input-row">
+            <input type="text" id="name" placeholder="输入任务名称..." required>
+            <select id="category" required>
+                <option value="">选择分类</option>
+                <option value="教学">教学</option>
+                <option value="竞赛">竞赛</option>
+                <option value="就业">就业</option>
+                <option value="科研">科研</option>
+                <option value="项目">项目</option>
+                <option value="职能组">职能组</option>
+                <option value="院校支撑">院校支撑</option>
+            </select>
+            <select id="priority">
+                <option value="中">中优先级</option>
+                <option value="高">高优先级</option>
+                <option value="低">低优先级</option>
+            </select>
+        </div>
+        <div class="task-input-row" style="margin-top: 12px;">
+            <input type="date" id="plan_start" required>
+            <input type="date" id="plan_end" required>
+            <button onclick="submitTask()">添加任务</button>
+        </div>
     </div>
 
     <!-- 任务列表 -->
     <div id="taskList"></div>
 </div>
 
-<!-- 暂停原因输入框 -->
+<!-- 弹窗 -->
 <div class="modal" id="pauseModal">
     <div class="modal-content">
         <h3>填写暂停原因</h3>
         <textarea id="pauseReason" placeholder="请输入暂停原因..."></textarea>
         <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closePauseModal()">取消</button>
+            <button class="btn" style="background: #e0e0e0; color: #333;" onclick="closePauseModal()">取消</button>
             <button class="btn btn-warning" onclick="confirmPause()">确认暂停</button>
         </div>
     </div>
 </div>
 
-<!-- 删除确认框 -->
 <div class="modal" id="deleteModal">
     <div class="modal-content">
         <h3>确认删除</h3>
         <p>确定要删除这个任务吗？此操作不可撤销。</p>
         <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+            <button class="btn" style="background: #e0e0e0; color: #333;" onclick="closeDeleteModal()">取消</button>
             <button class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
         </div>
     </div>
@@ -260,14 +332,11 @@
 <script>
     let tasks = [];
     let currentTaskId = null;
-    let currentStatus = null;
 
-    // 页面加载时获取任务列表
     document.addEventListener('DOMContentLoaded', function() {
         getTasks();
     });
 
-    // 获取所有任务
     async function getTasks() {
         try {
             const response = await fetch('/api/tasks');
@@ -281,14 +350,11 @@
         }
     }
 
-    // 创建任务
     async function createTask(taskData) {
         try {
             const response = await fetch('/api/tasks', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(taskData)
             });
             const result = await response.json();
@@ -302,19 +368,12 @@
         return false;
     }
 
-    // 更新任务状态
     async function updateTaskStatus(taskId, status, progressNote = '', pauseReason = '') {
         try {
             const response = await fetch(`/api/tasks/${taskId}/status`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    status: status,
-                    progress_note: progressNote,
-                    pause_reason: pauseReason
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, progress_note: progressNote, pause_reason: pauseReason })
             });
             const result = await response.json();
             if (result.success) {
@@ -327,12 +386,9 @@
         return false;
     }
 
-    // 删除任务
-    async function deleteTask(taskId) {
+    async function deleteTaskApi(taskId) {
         try {
-            const response = await fetch(`/api/tasks/${taskId}`, {
-                method: 'DELETE'
-            });
+            const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
             const result = await response.json();
             if (result.success) {
                 getTasks();
@@ -344,55 +400,66 @@
         return false;
     }
 
-    // 表单提交
-    document.getElementById('taskForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = {
-            name: document.getElementById('name').value,
-            category: document.getElementById('category').value,
-            priority: document.getElementById('priority').value,
-            plan_start: document.getElementById('plan_start').value,
-            plan_end: document.getElementById('plan_end').value,
-            status: '未开始'
-        };
-        if (await createTask(formData)) {
-            this.reset();
-            document.getElementById('priority').value = '中';
-        }
-    });
+    async function submitTask() {
+        const name = document.getElementById('name').value.trim();
+        const category = document.getElementById('category').value;
+        const priority = document.getElementById('priority').value;
+        const plan_start = document.getElementById('plan_start').value;
+        const plan_end = document.getElementById('plan_end').value;
 
-    // 渲染任务列表
+        if (!name || !category || !plan_start || !plan_end) {
+            alert('请填写完整信息');
+            return;
+        }
+
+        const formData = { name, category, priority, plan_start, plan_end, status: '未开始' };
+        if (await createTask(formData)) {
+            document.getElementById('name').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('plan_start').value = '';
+            document.getElementById('plan_end').value = '';
+        }
+    }
+
     function renderTasks() {
+        const categoryMap = {
+            '教学': 'teaching',
+            '竞赛': 'competition',
+            '就业': 'career',
+            '科研': 'research',
+            '项目': 'project',
+            '职能组': 'team',
+            '院校支撑': 'school'
+        };
         const categories = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑'];
         const container = document.getElementById('taskList');
         let html = '';
 
         categories.forEach(category => {
-            const categoryTasks = tasks.filter(t => t.category === category);
-            html += `<div class="category-section">
-                <div class="category-header">${category}</div>`;
+            const catTasks = tasks.filter(t => t.category === category);
+            const catClass = categoryMap[category] || 'other';
 
-            if (categoryTasks.length === 0) {
+            html += `<div class="category-section">
+                <div class="category-header ${catClass}">${category}</div>`;
+
+            if (catTasks.length === 0) {
                 html += `<div class="empty-category">暂无任务</div>`;
             } else {
-                html += `<ul class="task-list">`;
-                categoryTasks.forEach(task => {
-                    const priorityClass = `priority-${task.priority}`;
-                    html += `<li class="task-item">
-                        <div class="task-info">
-                            <div class="task-name">${escapeHtml(task.name)}</div>
-                            <div class="task-meta">
-                                <span>优先级: <span class="${priorityClass}">${task.priority}</span></span>
-                                <span>状态: <span class="status-tag status-${task.status}">${task.status}</span></span>
-                                <span>计划: ${task.plan_start} ~ ${task.plan_end}</span>
+                catTasks.forEach(task => {
+                    html += `<a href="/task/${task.id}" class="task-card-link">
+                        <div class="task-card">
+                            <div class="task-info">
+                                <span class="task-name">${escapeHtml(task.name)}</span>
+                                <span class="priority-tag ${task.priority}">${task.priority}</span>
+                                <span class="status-tag status-${task.status}">${task.status}</span>
+                                <span class="task-meta">计划: ${task.plan_start} ~ ${task.plan_end}</span>
+                            </div>
+                            <div class="task-actions" onclick="event.preventDefault();">
+                                ${getActionButtons(task)}
                             </div>
                         </div>
-                        <div class="task-actions">
-                            ${getActionButtons(task)}
-                        </div>
-                    </li>`;
+                    </a>`;
                 });
-                html += `</ul>`;
             }
             html += `</div>`;
         });
@@ -400,76 +467,62 @@
         container.innerHTML = html;
     }
 
-    // 获取操作按钮
     function getActionButtons(task) {
         let buttons = '';
-        if (task.status === '未开始' || task.status === '已暂停') {
-            buttons += `<button class="btn btn-success btn-sm" onclick="setStatus(${task.id}, '进行中')">进行中</button>`;
+        if (task.status === '未开始' || task.status === '暂停') {
+            buttons += `<button class="btn btn-success" onclick="setStatus(${task.id}, '进行中')">进行中</button>`;
         }
         if (task.status === '进行中') {
-            buttons += `<button class="btn btn-success btn-sm" onclick="setStatus(${task.id}, '已完成')">已完成</button>`;
-            buttons += `<button class="btn btn-warning btn-sm" onclick="openPauseModal(${task.id})">暂停</button>`;
+            buttons += `<button class="btn btn-success" onclick="setStatus(${task.id}, '已完成')">已完成</button>`;
+            buttons += `<button class="btn btn-warning" onclick="openPauseModal(${task.id})">暂停</button>`;
         }
         if (task.status === '已完成') {
-            buttons += `<button class="btn btn-primary btn-sm" onclick="setStatus(${task.id}, '进行中')">重开</button>`;
+            buttons += `<button class="btn btn-primary" onclick="setStatus(${task.id}, '进行中')">重开</button>`;
         }
-        if (task.status === '已暂停') {
-            buttons += `<button class="btn btn-success btn-sm" onclick="setStatus(${task.id}, '进行中')">继续</button>`;
-        }
-        buttons += `<button class="btn btn-danger btn-sm" onclick="openDeleteModal(${task.id})">删除</button>`;
+        buttons += `<button class="btn btn-danger" onclick="openDeleteModal(${task.id})">删除</button>`;
         return buttons;
     }
 
-    // 设置状态（不弹窗）
     function setStatus(taskId, status) {
         updateTaskStatus(taskId, status);
     }
 
-    // 打开暂停弹窗
     function openPauseModal(taskId) {
         currentTaskId = taskId;
-        currentStatus = '已暂停';
         document.getElementById('pauseReason').value = '';
         document.getElementById('pauseModal').classList.add('active');
     }
 
-    // 关闭暂停弹窗
     function closePauseModal() {
         document.getElementById('pauseModal').classList.remove('active');
         currentTaskId = null;
-        currentStatus = null;
     }
 
-    // 确认暂停
     function confirmPause() {
         const reason = document.getElementById('pauseReason').value;
         if (currentTaskId) {
-            updateTaskStatus(currentTaskId, currentStatus, '', reason);
+            updateTaskStatus(currentTaskId, '暂停', '', reason);
             closePauseModal();
         }
     }
 
-    // 打开删除弹窗
     function openDeleteModal(taskId) {
         currentTaskId = taskId;
         document.getElementById('deleteModal').classList.add('active');
     }
 
-    // 关闭删除弹窗
     function closeDeleteModal() {
         document.getElementById('deleteModal').classList.remove('active');
         currentTaskId = null;
     }
 
-    // 确认删除
     function confirmDelete() {
         if (currentTaskId) {
-            deleteTask(currentTaskId);
+            deleteTaskApi(currentTaskId);
             closeDeleteModal();
         }
     }
 
-    // HTML转义
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;

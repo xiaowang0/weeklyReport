@@ -7,13 +7,16 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <nav>
-        <a href="/tasks">任务管理</a>
-        <a href="/daily">每日任务</a>
-        <a href="/report">周报导出</a>
-    </nav>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+    <div class="container">
+        <nav class="sidebar">
+            <h2>周报系统</h2>
+            <a href="/tasks">任务管理</a>
+            <a href="/daily">每日任务</a>
+            <a href="/report">周报导出</a>
+        </nav>
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 </body>
 </html>

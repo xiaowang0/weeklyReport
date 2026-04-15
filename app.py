@@ -30,6 +30,10 @@ def daily_page():
 def report_page():
     return render_template('report.html')
 
+@app.route('/task/<int:task_id>')
+def task_detail_page(task_id):
+    return render_template('task_detail.html', task_id=task_id)
+
 # Task CRUD API
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
@@ -80,6 +84,23 @@ def create_task():
                 if task.get(key) and isinstance(task[key], datetime):
                     task[key] = task[key].strftime('%Y-%m-%d')
             return jsonify({'success': True, 'data': task}), 201
+    finally:
+        conn.close()
+
+@app.route('/api/tasks/<int:task_id>', methods=['GET'])
+def get_task(task_id):
+    """获取单个任务"""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM tasks WHERE id = %s", (task_id,))
+            task = cursor.fetchone()
+            if not task:
+                return jsonify({'success': False, 'error': '任务不存在'}), 404
+            for key in ['plan_start', 'plan_end', 'created_at', 'updated_at']:
+                if task.get(key) and isinstance(task[key], datetime):
+                    task[key] = task[key].strftime('%Y-%m-%d')
+            return jsonify({'success': True, 'data': task})
     finally:
         conn.close()
 
