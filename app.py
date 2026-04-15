@@ -159,5 +159,34 @@ def update_task_status(task_id):
     finally:
         conn.close()
 
+@app.route('/api/daily', methods=['GET'])
+def get_daily_tasks():
+    """按日期查询任务，不传date则默认当天"""
+    date = request.args.get('date')
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            if date:
+                sql = """SELECT * FROM tasks
+                         WHERE DATE(plan_start) = %s
+                         ORDER BY category, sort_order, id"""
+                cursor.execute(sql, (date,))
+            else:
+                today = datetime.now().strftime('%Y-%m-%d')
+                sql = """SELECT * FROM tasks
+                         WHERE DATE(plan_start) = %s
+                         ORDER BY category, sort_order, id"""
+                cursor.execute(sql, (today,))
+
+            tasks = cursor.fetchall()
+            for task in tasks:
+                for key in ['plan_start', 'plan_end', 'created_at', 'updated_at']:
+                    if task.get(key) and isinstance(task[key], datetime):
+                        task[key] = task[key].strftime('%Y-%m-%d')
+            return jsonify({'success': True, 'data': tasks})
+    finally:
+        conn.close()
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
