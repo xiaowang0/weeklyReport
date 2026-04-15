@@ -159,6 +159,23 @@ def update_task_status(task_id):
     finally:
         conn.close()
 
+@app.route('/api/tasks/<int:task_id>/sort', methods=['PUT'])
+def update_task_sort(task_id):
+    """更新任务的 sort_order 字段，用于同类内调整顺序"""
+    data = request.get_json()
+    new_order = data.get('sort_order', 0)
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("UPDATE tasks SET sort_order = %s, updated_at = NOW() WHERE id = %s", (new_order, task_id))
+            conn.commit()
+            if cursor.rowcount == 0:
+                return jsonify({'success': False, 'error': '任务不存在'}), 404
+            return jsonify({'success': True, 'message': '排序更新成功'})
+    finally:
+        conn.close()
+
 @app.route('/api/daily', methods=['GET'])
 def get_daily_tasks():
     """按日期查询任务，不传date则默认当天"""
