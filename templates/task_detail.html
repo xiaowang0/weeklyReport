@@ -18,16 +18,6 @@
         padding-bottom: 15px;
         border-bottom: 3px solid #e0e0e0;
     }
-    .page-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5em;
-        color: white;
-    }
     .page-title {
         font-size: 1.8em;
         font-weight: bold;
@@ -54,10 +44,95 @@
         width: 120px;
         font-weight: bold;
         color: #666;
+        display: flex;
+        align-items: center;
     }
     .detail-value {
         flex: 1;
         color: #333;
+    }
+
+    .detail-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+    .detail-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    .detail-input[readonly] {
+        background: #f5f5f5;
+        color: #999;
+        cursor: not-allowed;
+    }
+
+    .detail-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+    }
+    .detail-select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .detail-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+    }
+    .detail-textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .note-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .note-value {
+        padding: 10px 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        cursor: pointer;
+        min-height: 40px;
+    }
+    .note-value:hover {
+        background: #e9ecef;
+    }
+    .note-value.empty {
+        color: #999;
+    }
+    .note-edit-area {
+        display: none;
+    }
+    .note-edit-area textarea {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .btn-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 10px;
     }
 
     .priority-tag {
@@ -107,15 +182,24 @@
         color: #333;
         margin-bottom: 20px;
     }
+    .btn-save {
+        background: #667eea;
+        color: white;
+    }
     .btn-success { background: #26de81; color: white; }
     .btn-warning { background: #ffa502; color: white; }
     .btn-danger { background: #ff6b6b; color: white; }
-    .btn-primary { background: #667eea; color: white; }
 
     .action-buttons {
         display: flex;
         gap: 10px;
         margin-top: 20px;
+    }
+
+    .edit-mode-btn {
+        background: #667eea;
+        color: white;
+        margin-left: auto;
     }
 
     /* 弹窗 */
@@ -131,9 +215,7 @@
         align-items: center;
         z-index: 1000;
     }
-    .modal.active {
-        display: flex;
-    }
+    .modal.active { display: flex; }
     .modal-content {
         background: white;
         padding: 25px;
@@ -141,9 +223,7 @@
         max-width: 400px;
         width: 90%;
     }
-    .modal-content h3 {
-        margin-top: 0;
-    }
+    .modal-content h3 { margin-top: 0; }
     .modal-content textarea {
         width: 100%;
         padding: 12px;
@@ -168,6 +248,15 @@
         padding: 50px;
         color: #999;
     }
+
+    .datetime-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .datetime-row span {
+        color: #666;
+    }
 </style>
 
 <div class="task-detail-container">
@@ -181,20 +270,15 @@
 <!-- 状态更新弹窗 -->
 <div class="modal" id="statusModal">
     <div class="modal-content">
-        <h3 id="statusModalTitle">更新状态</h3>
-        <div id="statusModalContent">
-            <select id="newStatus" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:12px;font-size:14px;">
-                <option value="未开始">未开始</option>
-                <option value="进行中">进行中</option>
-                <option value="已完成">已完成</option>
-                <option value="暂停">暂停</option>
-            </select>
-        </div>
+        <h3>更新状态</h3>
+        <select id="newStatus" class="detail-select">
+            <option value="未开始">未开始</option>
+            <option value="进行中">进行中</option>
+            <option value="已完成">已完成</option>
+            <option value="暂停">暂停</option>
+        </select>
         <div id="pauseReasonArea" style="display:none;margin-top:15px;">
             <textarea id="pauseReason" placeholder="请输入暂停原因..." style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:12px;resize:vertical;min-height:80px;"></textarea>
-        </div>
-        <div id="progressNoteArea" style="display:none;margin-top:15px;">
-            <textarea id="progressNote" placeholder="请输入进度备注..." style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:12px;resize:vertical;min-height:80px;"></textarea>
         </div>
         <div class="modal-actions">
             <button class="btn" style="background:#e0e0e0;color:#333;" onclick="closeStatusModal()">取消</button>
@@ -218,6 +302,7 @@
 <script>
     const taskId = {{ task_id }};
     let currentTask = null;
+    let isEditMode = false;
 
     function goBack() {
         history.back();
@@ -233,6 +318,7 @@
             const result = await response.json();
             if (result.success && result.data) {
                 currentTask = result.data;
+                isEditMode = false;
                 renderTaskDetail();
             } else {
                 document.getElementById('taskDetail').innerHTML = '<div class="loading">任务不存在</div>';
@@ -252,29 +338,82 @@
             <div class="detail-card">
                 <div class="detail-row">
                     <div class="detail-label">任务名称</div>
-                    <div class="detail-value" style="font-size:1.2em;font-weight:bold;">${escapeHtml(t.name)}</div>
+                    <div class="detail-value">
+                        ${isEditMode ?
+                            `<input type="text" class="detail-input" id="editName" value="${escapeHtml(t.name)}">` :
+                            `<span style="font-size:1.2em;font-weight:bold;">${escapeHtml(t.name)}</span>`
+                        }
+                    </div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">所属分类</div>
-                    <div class="detail-value">${t.category}</div>
+                    <div class="detail-value">
+                        ${isEditMode ?
+                            `<select class="detail-select" id="editCategory">
+                                <option value="教学" ${t.category === '教学' ? 'selected' : ''}>教学</option>
+                                <option value="竞赛" ${t.category === '竞赛' ? 'selected' : ''}>竞赛</option>
+                                <option value="就业" ${t.category === '就业' ? 'selected' : ''}>就业</option>
+                                <option value="科研" ${t.category === '科研' ? 'selected' : ''}>科研</option>
+                                <option value="项目" ${t.category === '项目' ? 'selected' : ''}>项目</option>
+                                <option value="职能组" ${t.category === '职能组' ? 'selected' : ''}>职能组</option>
+                                <option value="其他" ${t.category === '其他' ? 'selected' : ''}>其他</option>
+                            </select>` :
+                            `<span class="status-tag status-${t.status}" style="background:#e9ecef;color:#333;">${t.category}</span>`
+                        }
+                    </div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">优先级</div>
-                    <div class="detail-value"><span class="priority-tag ${t.priority}">${t.priority}</span></div>
+                    <div class="detail-value">
+                        ${isEditMode ?
+                            `<select class="detail-select" id="editPriority">
+                                <option value="高" ${t.priority === '高' ? 'selected' : ''}>高</option>
+                                <option value="中" ${t.priority === '中' ? 'selected' : ''}>中</option>
+                                <option value="低" ${t.priority === '低' ? 'selected' : ''}>低</option>
+                            </select>` :
+                            `<span class="priority-tag ${t.priority}">${t.priority}</span>`
+                        }
+                    </div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">状态</div>
-                    <div class="detail-value"><span class="status-tag status-${t.status}">${t.status}</span></div>
+                    <div class="detail-value">
+                        <span class="status-tag status-${t.status}">${t.status}</span>
+                    </div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">计划时间</div>
-                    <div class="detail-value">${t.plan_start} ~ ${t.plan_end}</div>
+                    <div class="detail-value">
+                        ${isEditMode ?
+                            `<div class="datetime-row">
+                                <input type="date" class="detail-input" id="editPlanStart" value="${t.plan_start || ''}">
+                                <span>至</span>
+                                <input type="date" class="detail-input" id="editPlanEnd" value="${t.plan_end || ''}">
+                            </div>` :
+                            `<span>${t.plan_start} ~ ${t.plan_end}</span>`
+                        }
+                    </div>
                 </div>
-                ${t.progress_note ? `
-                <div class="detail-row">
-                    <div class="detail-label">进度备注</div>
-                    <div class="detail-value">${escapeHtml(t.progress_note)}</div>
-                </div>` : ''}
+                <div class="detail-row note-row">
+                    <div class="detail-label">备注信息</div>
+                    <div class="detail-value">
+                        ${isEditMode ?
+                            `<div class="note-edit-area" style="display:block;">
+                                <textarea class="detail-textarea" id="editNote" placeholder="输入备注信息...">${t.progress_note || ''}</textarea>
+                            </div>` :
+                            `<div class="note-value ${t.progress_note ? '' : 'empty'}" onclick="startEditNote()">
+                                ${t.progress_note || '点击添加备注...'}
+                            </div>
+                            <div class="note-edit-area" id="noteEditArea">
+                                <textarea class="detail-textarea" id="noteInput" placeholder="输入备注信息...">${t.progress_note || ''}</textarea>
+                                <div class="btn-row">
+                                    <button class="btn" style="background:#e0e0e0;color:#333;" onclick="cancelEditNote()">取消</button>
+                                    <button class="btn btn-save" onclick="saveNote()">保存</button>
+                                </div>
+                            </div>`
+                        }
+                    </div>
+                </div>
                 ${t.pause_reason ? `
                 <div class="detail-row">
                     <div class="detail-label">暂停原因</div>
@@ -291,11 +430,85 @@
             </div>
 
             <div class="action-buttons">
-                ${getActionButtons(t)}
+                ${isEditMode ?
+                    `<button class="btn btn-save" onclick="saveAllChanges()">保存修改</button>
+                     <button class="btn" style="background:#e0e0e0;color:#333;" onclick="cancelEdit()">取消</button>` :
+                    `${getActionButtons(t)}`
+                }
             </div>
         `;
 
         document.getElementById('taskDetail').innerHTML = html;
+    }
+
+    function startEditNote() {
+        document.getElementById('noteEditArea').style.display = 'block';
+        document.getElementById('noteInput').focus();
+    }
+
+    function cancelEditNote() {
+        document.getElementById('noteEditArea').style.display = 'none';
+        document.getElementById('noteInput').value = currentTask.progress_note || '';
+    }
+
+    async function saveNote() {
+        const note = document.getElementById('noteInput').value.trim();
+        try {
+            const response = await fetch(`/api/tasks/${taskId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: currentTask.status,
+                    progress_note: note
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                currentTask.progress_note = note;
+                renderTaskDetail();
+            }
+        } catch (error) {
+            console.error('保存备注失败:', error);
+        }
+    }
+
+    function startEdit() {
+        isEditMode = true;
+        renderTaskDetail();
+    }
+
+    function cancelEdit() {
+        isEditMode = false;
+        renderTaskDetail();
+    }
+
+    async function saveAllChanges() {
+        const name = document.getElementById('editName').value.trim();
+        const category = document.getElementById('editCategory').value;
+        const priority = document.getElementById('editPriority').value;
+        const plan_start = document.getElementById('editPlanStart').value;
+        const plan_end = document.getElementById('editPlanEnd').value;
+        const progress_note = document.getElementById('editNote').value.trim();
+
+        if (!name) {
+            alert('任务名称不能为空');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, category, priority, plan_start, plan_end, progress_note, status: currentTask.status })
+            });
+            const result = await response.json();
+            if (result.success) {
+                isEditMode = false;
+                loadTask();
+            }
+        } catch (error) {
+            console.error('保存失败:', error);
+        }
     }
 
     function getActionButtons(task) {
@@ -308,8 +521,9 @@
             buttons += `<button class="btn btn-warning" onclick="openStatusModal('暂停')">暂停</button>`;
         }
         if (task.status === '已完成') {
-            buttons += `<button class="btn btn-primary" onclick="openStatusModal('进行中')">重开</button>`;
+            buttons += `<button class="btn" style="background:#17a2b8;color:white;" onclick="openStatusModal('进行中')">重开</button>`;
         }
+        buttons += `<button class="btn" style="background:#667eea;color:white;" onclick="startEdit()">编辑</button>`;
         buttons += `<button class="btn btn-danger" onclick="openDeleteModal()">删除</button>`;
         return buttons;
     }
@@ -320,7 +534,6 @@
         pendingStatus = status;
         document.getElementById('newStatus').value = status;
         document.getElementById('pauseReasonArea').style.display = status === '暂停' ? 'block' : 'none';
-        document.getElementById('progressNoteArea').style.display = status === '已完成' ? 'block' : 'none';
         document.getElementById('statusModal').classList.add('active');
     }
 
@@ -334,7 +547,6 @@
 
         const status = document.getElementById('newStatus').value;
         const pauseReason = document.getElementById('pauseReason').value;
-        const progressNote = document.getElementById('progressNote').value;
 
         try {
             const response = await fetch(`/api/tasks/${taskId}/status`, {
@@ -342,8 +554,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     status: status,
-                    pause_reason: pauseReason,
-                    progress_note: progressNote
+                    pause_reason: pauseReason
                 })
             });
             const result = await response.json();

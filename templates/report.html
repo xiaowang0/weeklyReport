@@ -3,43 +3,329 @@
 {% block title %}周报导出{% endblock %}
 
 {% block content %}
-<div class="report-container">
-    <h1>周报导出</h1>
+<style>
+    .report-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .date-range-bar {
+        background: #f5f5f5;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .date-range-bar label {
+        font-weight: bold;
+    }
+    .date-range-bar input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .btn-primary {
+        background: #1890ff;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #40a9ff;
+    }
+    .btn-success {
+        background: #52c41a;
+        color: white;
+    }
+    .btn-success:hover {
+        background: #73d13d;
+    }
+    .btn:disabled {
+        background: #d9d9d9;
+        cursor: not-allowed;
+    }
 
-    <div class="date-range">
-        <p>上周周期：<span id="week-range"></span></p>
+    /* 预览表格样式 - 仿Excel */
+    .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        background: white;
+        table-layout: fixed;
+    }
+    .preview-table th, .preview-table td {
+        border: 1px solid #d9d9d9;
+        padding: 8px 10px;
+        vertical-align: top;
+        word-wrap: break-word;
+    }
+    .preview-table th {
+        background: #f5f5f5;
+        font-weight: bold;
+        text-align: center;
+    }
+    .preview-table .col-category { width: 80px; text-align: center; }
+    .preview-table .col-plan { width: 25%; }
+    .preview-table .col-completed { width: 30%; }
+    .preview-table .col-next { width: 25%; }
+    .preview-table .col-coord { width: 15%; }
+    .preview-table .header-row th {
+        background: #e6f7ff;
+    }
+    .preview-table .title-row td {
+        background: #1890ff;
+        color: white;
+        text-align: center;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .preview-table .info-row td {
+        background: #f5f5f5;
+    }
+    .preview-table .category-col {
+        background: #fafafa;
+        font-weight: bold;
+        text-align: center;
+    }
+    .preview-table .task-item {
+        margin-bottom: 5px;
+    }
+    .preview-table .task-note {
+        font-size: 11px;
+        color: #888;
+        font-style: italic;
+    }
+    .preview-table textarea {
+        width: 100%;
+        min-height: 60px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 6px;
+        font-size: 12px;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .preview-table textarea:focus {
+        outline: none;
+        border-color: #1890ff;
+    }
+
+    .export-bar {
+        margin-top: 20px;
+        text-align: center;
+    }
+    .export-bar .btn {
+        padding: 12px 40px;
+        font-size: 16px;
+    }
+    .no-data {
+        color: #ccc;
+        text-align: center;
+    }
+</style>
+
+<div class="report-container">
+    <div class="date-range-bar">
+        <div>
+            <label>开始日期:</label>
+            <input type="date" id="startDate">
+        </div>
+        <div>
+            <label>结束日期:</label>
+            <input type="date" id="endDate">
+        </div>
+        <button class="btn btn-primary" id="loadBtn" onclick="loadPreview()">加载预览</button>
     </div>
 
-    <button id="export-btn" class="btn-primary">导出周报Excel</button>
+    <!-- 预览表格 -->
+    <table class="preview-table" id="previewTable">
+        <tr class="title-row">
+            <td colspan="5">工作周报</td>
+        </tr>
+        <tr class="info-row">
+            <td>汇报人</td>
+            <td>王弯弯</td>
+            <td>汇报时间段</td>
+            <td colspan="2" id="weekRangeDisplay">请选择日期范围</td>
+        </tr>
+        <tr class="info-row">
+            <td>所属项目</td>
+            <td>河工大</td>
+            <td>提交时间</td>
+            <td colspan="2" id="submitDateDisplay">-</td>
+        </tr>
+        <tr class="header-row">
+            <th class="col-category">工作分类</th>
+            <th class="col-plan">本周计划</th>
+            <th class="col-completed">本周完成情况</th>
+            <th class="col-next">下周工作计划</th>
+            <th class="col-coord">待协调、支撑事项</th>
+        </tr>
+        <tr>
+            <td class="category-col">教学</td>
+            <td><textarea id="plan_教学" placeholder="本周计划..."></textarea></td>
+            <td id="completed_教学"><div class="no-data">-</div></td>
+            <td rowspan="7" style="vertical-align: top;">
+                <textarea id="nextWeekPlan" placeholder="下周整体工作计划..."></textarea>
+            </td>
+            <td rowspan="7" style="vertical-align: top;">
+                <textarea id="coordinatedItems" placeholder="待协调事项..."></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td class="category-col">竞赛</td>
+            <td><textarea id="plan_竞赛" placeholder="本周计划..."></textarea></td>
+            <td id="completed_竞赛"><div class="no-data">-</div></td>
+        </tr>
+        <tr>
+            <td class="category-col">就业</td>
+            <td><textarea id="plan_就业" placeholder="本周计划..."></textarea></td>
+            <td id="completed_就业"><div class="no-data">-</div></td>
+        </tr>
+        <tr>
+            <td class="category-col">科研</td>
+            <td><textarea id="plan_科研" placeholder="本周计划..."></textarea></td>
+            <td id="completed_科研"><div class="no-data">-</div></td>
+        </tr>
+        <tr>
+            <td class="category-col">项目</td>
+            <td><textarea id="plan_项目" placeholder="本周计划..."></textarea></td>
+            <td id="completed_项目"><div class="no-data">-</div></td>
+        </tr>
+        <tr>
+            <td class="category-col">职能组</td>
+            <td><textarea id="plan_职能组" placeholder="本周计划..."></textarea></td>
+            <td id="completed_职能组"><div class="no-data">-</div></td>
+        </tr>
+        <tr>
+            <td class="category-col">院校支撑</td>
+            <td><textarea id="plan_院校支撑" placeholder="本周计划..."></textarea></td>
+            <td id="completed_院校支撑"><div class="no-data">-</div></td>
+        </tr>
+    </table>
+
+    <div class="export-bar">
+        <button class="btn btn-success" id="exportBtn" onclick="exportReport()" disabled>导出周报Excel</button>
+    </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Calculate previous week's Monday to Sunday
-    const today = new Date();
-    const todayDay = today.getDay();
-    const mondayOffset = todayDay === 0 ? -6 : 1 - todayDay;
-    const sundayOffset = todayDay === 0 ? 0 : 7 - todayDay;
+    const categories = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑'];
 
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + mondayOffset - 7);
+    // 初始化日期为本周一到本周日并自动加载预览
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const todayDay = today.getDay(); // 0=周日, 1=周一, ...
 
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() + sundayOffset - 7);
+        // 本周一 = 今天 - (todayDay - 1) 天（周一=1）
+        const monday = new Date(today);
+        monday.setDate(today.getDate() - (todayDay - 1));
 
-    const formatDate = function(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+        // 本周日 = 本周一 + 6
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
 
-    const weekRange = formatDate(monday) + ' 至 ' + formatDate(sunday);
-    document.getElementById('week-range').textContent = weekRange;
+        document.getElementById('startDate').valueAsDate = monday;
+        document.getElementById('endDate').valueAsDate = sunday;
+        document.getElementById('weekRangeDisplay').textContent = `${formatDate(monday)} 至 ${formatDate(sunday)}`;
+        document.getElementById('submitDateDisplay').textContent = today.toISOString().split('T')[0];
 
-    // Export button click handler
-    document.getElementById('export-btn').addEventListener('click', async function() {
-        const btn = this;
+        // 自动加载预览
+        loadPreview();
+    });
+
+    function formatDate(date) {
+        return date.toISOString().split('T')[0];
+    }
+
+    async function loadPreview() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        if (!startDate || !endDate) {
+            alert('请选择日期范围');
+            return;
+        }
+
+        // 更新显示的日期范围
+        document.getElementById('weekRangeDisplay').textContent = `${startDate} 至 ${endDate}`;
+
+        const btn = document.getElementById('loadBtn');
+        btn.disabled = true;
+        btn.textContent = '加载中...';
+
+        try {
+            const response = await fetch(`/api/report/preview?start_date=${startDate}&end_date=${endDate}`);
+            const result = await response.json();
+
+            if (result.success) {
+                renderCompleted(result.data.completed);
+                document.getElementById('exportBtn').disabled = false;
+            } else {
+                alert('加载失败: ' + (result.error || '未知错误'));
+            }
+        } catch (error) {
+            alert('加载失败: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '加载预览';
+        }
+    }
+
+    function renderCompleted(completed) {
+        categories.forEach(cat => {
+            const container = document.getElementById(`completed_${cat}`);
+            const tasks = completed[cat] || [];
+
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="no-data">-</div>';
+                return;
+            }
+
+            let html = '';
+            let index = 1;
+            tasks.forEach(t => {
+                html += `<div class="task-item">${index}.完成${escapeHtml(t.name)}`;
+                if (t.progress_note) {
+                    html += `<div class="task-note">${escapeHtml(t.progress_note)}</div>`;
+                }
+                html += '</div>';
+                index++;
+            });
+            container.innerHTML = html;
+        });
+    }
+
+    async function exportReport() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        if (!startDate || !endDate) {
+            alert('请选择日期范围');
+            return;
+        }
+
+        // 收集本周计划内容
+        const weekPlanContent = {};
+        categories.forEach(cat => {
+            const value = document.getElementById(`plan_${cat}`).value.trim();
+            if (value) {
+                weekPlanContent[cat] = value;
+            }
+        });
+
+        const nextWeekPlan = document.getElementById('nextWeekPlan').value.trim();
+        const coordinatedItems = document.getElementById('coordinatedItems').value.trim();
+
+        const btn = document.getElementById('exportBtn');
         btn.disabled = true;
         btn.textContent = '导出中...';
 
@@ -50,8 +336,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    start_date: formatDate(monday),
-                    end_date: formatDate(sunday)
+                    start_date: startDate,
+                    end_date: endDate,
+                    week_plan_content: weekPlanContent,
+                    next_week_plan: nextWeekPlan,
+                    coordinated_items: coordinatedItems
                 })
             });
 
@@ -63,48 +352,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = '周报_' + weekRange.replace(' 至 ', '_') + '.xlsx';
+            a.download = `周报_${startDate}_${endDate}.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            alert('导出失败：' + error.message);
+            alert('导出失败: ' + error.message);
         } finally {
             btn.disabled = false;
             btn.textContent = '导出周报Excel';
         }
-    });
-});
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 </script>
-
-<style>
-.report-container {
-    padding: 20px;
-}
-
-.date-range {
-    margin: 20px 0;
-    font-size: 18px;
-}
-
-.btn-primary {
-    padding: 10px 20px;
-    background-color: #1890ff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.btn-primary:hover {
-    background-color: #40a9ff;
-}
-
-.btn-primary:disabled {
-    background-color: #d9d9d9;
-    cursor: not-allowed;
-}
-</style>
 {% endblock %}
