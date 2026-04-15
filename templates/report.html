@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}周报导出{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <h1>周报导出</h1>
+
+    <div class="date-range">
+        <p>上周周期：<span id="week-range"></span></p>
+    </div>
+
+    <button id="export-btn" class="btn-primary">导出周报Excel</button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate previous week's Monday to Sunday
+    const today = new Date();
+    const todayDay = today.getDay();
+    const mondayOffset = todayDay === 0 ? -6 : 1 - todayDay;
+    const sundayOffset = todayDay === 0 ? 0 : 7 - todayDay;
+
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset - 7);
+
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() + sundayOffset - 7);
+
+    const formatDate = function(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const weekRange = formatDate(monday) + ' 至 ' + formatDate(sunday);
+    document.getElementById('week-range').textContent = weekRange;
+
+    // Export button click handler
+    document.getElementById('export-btn').addEventListener('click', async function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = '导出中...';
+
+        try {
+            const response = await fetch('/api/report/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    start_date: formatDate(monday),
+                    end_date: formatDate(sunday)
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('导出失败');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '周报_' + weekRange.replace(' 至 ', '_') + '.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            alert('导出失败：' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '导出周报Excel';
+        }
+    });
+});
+</script>
+
+<style>
+.report-container {
+    padding: 20px;
+}
+
+.date-range {
+    margin: 20px 0;
+    font-size: 18px;
+}
+
+.btn-primary {
+    padding: 10px 20px;
+    background-color: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-primary:hover {
+    background-color: #40a9ff;
+}
+
+.btn-primary:disabled {
+    background-color: #d9d9d9;
+    cursor: not-allowed;
+}
+</style>
+{% endblock %}
