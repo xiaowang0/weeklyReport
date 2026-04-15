@@ -283,7 +283,7 @@ def generate_report():
         ws[f'A{i}'] = cat
 
     # 保存到临时文件
-    filename = f"{week_start}{week_end}-周报.xlsx"
+    filename = f"{week_start}-{week_end}-周报.xlsx"
     temp_dir = tempfile.gettempdir()
     filepath = os.path.join(temp_dir, filename)
     wb.save(filepath)
