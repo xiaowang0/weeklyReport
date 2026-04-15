@@ -50,10 +50,10 @@ def get_tasks():
 def create_task():
     """创建新任务"""
     data = request.get_json()
-    required_fields = ['name', 'category']
+    required_fields = ['name', 'category', 'plan_start', 'plan_end']
     for field in required_fields:
         if not data.get(field):
-            return jsonify({'success': False, 'error': f'缺少必填字段: {field}'}), 400
+            return jsonify({'success': False, 'error': '缺少必填字段'}), 400
 
     conn = get_db_connection()
     try:
