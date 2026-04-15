@@ -3,7 +3,12 @@
     "allow": [
       "Bash(python:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5000/tasks)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5000/daily)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5000/report)",
+      "Bash(curl -s http://127.0.0.1:5000/api/tasks)",
+      "Bash(curl -s http://127.0.0.1:5000/api/daily)"
     ]
   }
 }
