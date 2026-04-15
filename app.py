@@ -278,9 +278,14 @@ def generate_report():
     ws['D4'] = '下周工作计划'
     ws['E4'] = '待协调、支撑事项'
 
-    # A5-A11: 六大分类
+    # A5-A11: 六大分类及本周完成情况
     for i, cat in enumerate(categories, start=5):
         ws[f'A{i}'] = cat
+        # 填入本周完成情况（C列）
+        tasks_in_cat = categorized.get(cat, [])
+        if tasks_in_cat:
+            ws[f'C{i}'] = '\n'.join(tasks_in_cat)
+        # B/D/E列保留为空（手动填写区域）
 
     # 保存到临时文件
     filename = f"{week_start}-{week_end}-周报.xlsx"
