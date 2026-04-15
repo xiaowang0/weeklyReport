@@ -4,6 +4,8 @@ import pymysql
 from pymysql.cursors import DictCursor
 from config import DB_CONFIG
 from openpyxl import Workbook
+import tempfile
+import os
 
 app = Flask(__name__)
 
@@ -204,6 +206,89 @@ def get_daily_tasks():
             return jsonify({'success': True, 'data': tasks})
     finally:
         conn.close()
+
+@app.route('/api/report/generate', methods=['POST'])
+def generate_report():
+    """生成周报Excel"""
+    data = request.get_json()
+    week_start = data.get('week_start')
+    week_end = data.get('week_end')
+
+    if not week_start or not week_end:
+        return jsonify({'success': False, 'error': '缺少 week_start 或 week_end'}), 400
+
+    # 查询周期内已完成任务
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            sql = """SELECT * FROM tasks
+                     WHERE status = '已完成'
+                     AND plan_end BETWEEN %s AND %s
+                     ORDER BY category, sort_order, id"""
+            cursor.execute(sql, (week_start, week_end))
+            tasks = cursor.fetchall()
+    finally:
+        conn.close()
+
+    # 按六大分类归类任务
+    categories = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑']
+    categorized = {cat: [] for cat in categories}
+    for task in tasks:
+        cat = task.get('category')
+        if cat in categorized:
+            progress_note = task.get('progress_note', '')
+            task_name = task.get('name', '')
+            if progress_note:
+                categorized[cat].append(f"{task_name}：{progress_note}")
+            else:
+                categorized[cat].append(task_name)
+
+    # 生成Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "工作周报"
+
+    # 设置列宽
+    ws.column_dimensions['A'].width = 12
+    ws.column_dimensions['B'].width = 25
+    ws.column_dimensions['C'].width = 35
+    ws.column_dimensions['D'].width = 25
+    ws.column_dimensions['E'].width = 25
+
+    # A1: 工作周报
+    ws['A1'] = '工作周报'
+    ws.merge_cells('A1:E1')
+
+    # A2: 汇报人    B2: 王弯弯    C2: 汇报时间段    D2: {week_start} 至 {week_end}
+    ws['A2'] = '汇报人'
+    ws['B2'] = '王弯弯'
+    ws['C2'] = '汇报时间段'
+    ws['D2'] = f'{week_start} 至 {week_end}'
+
+    # A3: 所属项目  B3: 河工大    C3: 提交时间      D3: {提交时间}
+    ws['A3'] = '所属项目'
+    ws['B3'] = '河工大'
+    ws['C3'] = '提交时间'
+    ws['D3'] = datetime.now().strftime('%Y-%m-%d')
+
+    # A4: 工作分类  B4: 本周计划  C4: 本周完成情况  D4: 下周工作计划    E4: 待协调、支撑事项
+    ws['A4'] = '工作分类'
+    ws['B4'] = '本周计划'
+    ws['C4'] = '本周完成情况'
+    ws['D4'] = '下周工作计划'
+    ws['E4'] = '待协调、支撑事项'
+
+    # A5-A11: 六大分类
+    for i, cat in enumerate(categories, start=5):
+        ws[f'A{i}'] = cat
+
+    # 保存到临时文件
+    filename = f"{week_start}{week_end}-周报.xlsx"
+    temp_dir = tempfile.gettempdir()
+    filepath = os.path.join(temp_dir, filename)
+    wb.save(filepath)
+
+    return send_file(filepath, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
