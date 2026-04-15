@@ -230,18 +230,16 @@ def generate_report():
     finally:
         conn.close()
 
-    # 按六大分类归类任务
+    # 按六大分类归类任务（存储字典列表）
     categories = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑']
     categorized = {cat: [] for cat in categories}
     for task in tasks:
         cat = task.get('category')
         if cat in categorized:
-            progress_note = task.get('progress_note', '')
-            task_name = task.get('name', '')
-            if progress_note:
-                categorized[cat].append(f"{task_name}：{progress_note}")
-            else:
-                categorized[cat].append(task_name)
+            categorized[cat].append({
+                'name': task.get('name', ''),
+                'progress_note': task.get('progress_note', '')
+            })
 
     # 生成Excel
     wb = Workbook()
@@ -284,7 +282,15 @@ def generate_report():
         # 填入本周完成情况（C列）
         tasks_in_cat = categorized.get(cat, [])
         if tasks_in_cat:
-            ws[f'C{i}'] = '\n'.join(tasks_in_cat)
+            task_texts = []
+            for t in tasks_in_cat:
+                name = t['name']
+                note = t.get('progress_note', '')
+                if note:
+                    task_texts.append(f"{name}：{note}")
+                else:
+                    task_texts.append(name)
+            ws[f'C{i}'] = '\n'.join(task_texts)
         # B/D/E列保留为空（手动填写区域）
 
     # 保存到临时文件
