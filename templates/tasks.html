@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block title %}任务管理{% endblock %}
+
+{% block content %}
+<style>
+    .task-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .task-form {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+    .task-form h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .form-group label {
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .form-group input, .form-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #0056b3;
+    }
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+    .btn-success:hover {
+        background: #1e7e34;
+    }
+    .btn-warning {
+        background: #ffc107;
+        color: #212529;
+    }
+    .btn-warning:hover {
+        background: #e0a800;
+    }
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover {
+        background: #c82333;
+    }
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+    .category-section {
+        margin-bottom: 30px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .category-header {
+        background: #e9ecef;
+        padding: 15px 20px;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    .task-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .task-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .task-item:last-child {
+        border-bottom: none;
+    }
+    .task-info {
+        flex: 1;
+    }
+    .task-name {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .task-meta {
+        font-size: 12px;
+        color: #666;
+    }
+    .task-meta span {
+        margin-right: 15px;
+    }
+    .priority-high { color: #dc3545; }
+    .priority-medium { color: #ffc107; }
+    .priority-low { color: #28a745; }
+    .status-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+    }
+    .status-未开始 { background: #e9ecef; }
+    .status-进行中 { background: #17a2b8; color: white; }
+    .status-已完成 { background: #28a745; color: white; }
+    .status-已暂停 { background: #ffc107; color: #212529; }
+    .task-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal.active {
+        display: flex;
+    }
+    .modal-content {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        max-width: 400px;
+        width: 90%;
+    }
+    .modal-content h3 {
+        margin-top: 0;
+    }
+    .modal-content textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        min-height: 80px;
+        margin: 15px 0;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    .empty-category {
+        padding: 20px;
+        text-align: center;
+        color: #999;
+    }
+</style>
+
+<div class="task-container">
+    <!-- 新增任务表单 -->
+    <div class="task-form">
+        <h2>新增任务</h2>
+        <form id="taskForm">
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label for="name">任务名称 *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="category">所属分类 *</label>
+                    <select id="category" name="category" required>
+                        <option value="">请选择</option>
+                        <option value="教学">教学</option>
+                        <option value="竞赛">竞赛</option>
+                        <option value="就业">就业</option>
+                        <option value="科研">科研</option>
+                        <option value="项目">项目</option>
+                        <option value="职能组">职能组</option>
+                        <option value="院校支撑">院校支撑</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="priority">优先级</label>
+                    <select id="priority" name="priority">
+                        <option value="中">中</option>
+                        <option value="高">高</option>
+                        <option value="低">低</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                    <label for="plan_start">计划开始时间 *</label>
+                    <input type="date" id="plan_start" name="plan_start" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="plan_end">计划完成时间 *</label>
+                    <input type="date" id="plan_end" name="plan_end" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">添加任务</button>
+        </form>
+    </div>
+
+    <!-- 任务列表 -->
+    <div id="taskList"></div>
+</div>
+
+<!-- 暂停原因输入框 -->
+<div class="modal" id="pauseModal">
+    <div class="modal-content">
+        <h3>填写暂停原因</h3>
+        <textarea id="pauseReason" placeholder="请输入暂停原因..."></textarea>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closePauseModal()">取消</button>
+            <button class="btn btn-warning" onclick="confirmPause()">确认暂停</button>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认框 -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <h3>确认删除</h3>
+        <p>确定要删除这个任务吗？此操作不可撤销。</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+            <button class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let tasks = [];
+    let currentTaskId = null;
+    let currentStatus = null;
+
+    // 页面加载时获取任务列表
+    document.addEventListener('DOMContentLoaded', function() {
+        getTasks();
+    });
+
+    // 获取所有任务
+    async function getTasks() {
+        try {
+            const response = await fetch('/api/tasks');
+            const result = await response.json();
+            if (result.success) {
+                tasks = result.data || [];
+                renderTasks();
+            }
+        } catch (error) {
+            console.error('获取任务失败:', error);
+        }
+    }
+
+    // 创建任务
+    async function createTask(taskData) {
+        try {
+            const response = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(taskData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                getTasks();
+                return true;
+            }
+        } catch (error) {
+            console.error('创建任务失败:', error);
+        }
+        return false;
+    }
+
+    // 更新任务状态
+    async function updateTaskStatus(taskId, status, progressNote = '', pauseReason = '') {
+        try {
+            const response = await fetch(`/api/tasks/${taskId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: status,
+                    progress_note: progressNote,
+                    pause_reason: pauseReason
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                getTasks();
+                return true;
+            }
+        } catch (error) {
+            console.error('更新状态失败:', error);
+        }
+        return false;
+    }
+
+    // 删除任务
+    async function deleteTask(taskId) {
+        try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (result.success) {
+                getTasks();
+                return true;
+            }
+        } catch (error) {
+            console.error('删除任务失败:', error);
+        }
+        return false;
+    }
+
+    // 表单提交
+    document.getElementById('taskForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = {
+            name: document.getElementById('name').value,
+            category: document.getElementById('category').value,
+            priority: document.getElementById('priority').value,
+            plan_start: document.getElementById('plan_start').value,
+            plan_end: document.getElementById('plan_end').value,
+            status: '未开始'
+        };
+        if (await createTask(formData)) {
+            this.reset();
+            document.getElementById('priority').value = '中';
+        }
+    });
+
+    // 渲染任务列表
+    function renderTasks() {
+        const categories = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑'];
+        const container = document.getElementById('taskList');
+        let html = '';
+
+        categories.forEach(category => {
+            const categoryTasks = tasks.filter(t => t.category === category);
+            html += `<div class="category-section">
+                <div class="category-header">${category}</div>`;
+
+            if (categoryTasks.length === 0) {
+                html += `<div class="empty-category">暂无任务</div>`;
+            } else {
+                html += `<ul class="task-list">`;
+                categoryTasks.forEach(task => {
+                    const priorityClass = `priority-${task.priority}`;
+                    html += `<li class="task-item">
+                        <div class="task-info">
+                            <div class="task-name">${escapeHtml(task.name)}</div>
+                            <div class="task-meta">
+                                <span>优先级: <span class="${priorityClass}">${task.priority}</span></span>
+                                <span>状态: <span class="status-tag status-${task.status}">${task.status}</span></span>
+                                <span>计划: ${task.plan_start} ~ ${task.plan_end}</span>
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            ${getActionButtons(task)}
+                        </div>
+                    </li>`;
+                });
+                html += `</ul>`;
+            }
+            html += `</div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    // 获取操作按钮
+    function getActionButtons(task) {
+        let buttons = '';
+        if (task.status === '未开始' || task.status === '已暂停') {
+            buttons += `<button class="btn btn-success btn-sm" onclick="setStatus(${task.id}, '进行中')">进行中</button>`;
+        }
+        if (task.status === '进行中') {
+            buttons += `<button class="btn btn-success btn-sm" onclick="setStatus(${task.id}, '已完成')">已完成</button>`;
+            buttons += `<button class="btn btn-warning btn-sm" onclick="openPauseModal(${task.id})">暂停</button>`;
+        }
+        if (task.status === '已完成') {
+            buttons += `<button class="btn btn-primary btn-sm" onclick="setStatus(${task.id}, '进行中')">重开</button>`;
+        }
+        if (task.status === '已暂停') {
+            buttons += `<button class="btn btn-success btn-sm" onclick="setStatus(${task.id}, '进行中')">继续</button>`;
+        }
+        buttons += `<button class="btn btn-danger btn-sm" onclick="openDeleteModal(${task.id})">删除</button>`;
+        return buttons;
+    }
+
+    // 设置状态（不弹窗）
+    function setStatus(taskId, status) {
+        updateTaskStatus(taskId, status);
+    }
+
+    // 打开暂停弹窗
+    function openPauseModal(taskId) {
+        currentTaskId = taskId;
+        currentStatus = '已暂停';
+        document.getElementById('pauseReason').value = '';
+        document.getElementById('pauseModal').classList.add('active');
+    }
+
+    // 关闭暂停弹窗
+    function closePauseModal() {
+        document.getElementById('pauseModal').classList.remove('active');
+        currentTaskId = null;
+        currentStatus = null;
+    }
+
+    // 确认暂停
+    function confirmPause() {
+        const reason = document.getElementById('pauseReason').value;
+        if (currentTaskId) {
+            updateTaskStatus(currentTaskId, currentStatus, '', reason);
+            closePauseModal();
+        }
+    }
+
+    // 打开删除弹窗
+    function openDeleteModal(taskId) {
+        currentTaskId = taskId;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    // 关闭删除弹窗
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        currentTaskId = null;
+    }
+
+    // 确认删除
+    function confirmDelete() {
+        if (currentTaskId) {
+            deleteTask(currentTaskId);
+            closeDeleteModal();
+        }
+    }
+
+    // HTML转义
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}
