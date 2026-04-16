@@ -465,9 +465,6 @@
                         <div class="task-input-row">
                             <textarea v-model="workHoursContent" placeholder="工时统计内容..." style="width:100%;min-height:200px;font-size:14px;"></textarea>
                         </div>
-                        <div class="task-input-row" style="margin-top:10px;justify-content:center;">
-                            <button class="btn-add" @click="generateWorkHours">从已完成任务生成工时</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -499,7 +496,7 @@
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, computed, onMounted, watch } = Vue;
 
         createApp({
             delimiters: ['[[', ']]'],
@@ -1063,15 +1060,14 @@
                                 coordItems.value[cat] = '';
                             });
                             previewLoaded.value = true;
-                            generateWorkHours();
                         }
                     } catch (error) {
                         alert('加载失败: ' + error.message);
                     }
                 };
 
-                const generateWorkHours = () => {
-                    // 按分类生成工时统计
+                // 工时统计 - 监听已完成编辑内容变化，实时更新
+                watch(completedEditContent, () => {
                     const catNames = {
                         '教学': '一、教学',
                         '竞赛': '二、竞赛',
@@ -1086,19 +1082,17 @@
                     const catOrder = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑'];
 
                     catOrder.forEach(cat => {
-                        const tasks = completedData.value[cat] || [];
-                        if (tasks.length > 0) {
+                        const content = completedEditContent.value[cat] || '';
+                        if (content.trim()) {
                             lines.push(catNames[cat]);
-                            tasks.forEach((t, i) => {
-                                const note = t.progress_note ? `：${t.progress_note}` : '';
-                                lines.push(`${i + 1}、${t.name}${note}`);
-                            });
-                            lines.push(''); // 空行分隔
+                            const taskLines = content.split('\n').filter(l => l.trim());
+                            taskLines.forEach(l => lines.push(l));
+                            lines.push('');
                         }
                     });
 
                     workHoursContent.value = lines.join('\n');
-                };
+                }, { deep: true });
 
                 const updateWeekPlanContent = (cat) => {
                     // v-model 自动更新
@@ -1198,7 +1192,6 @@
                     updateCoordItems,
                     exportReport,
                     workHoursContent,
-                    generateWorkHours,
                     recordWeek,
                     recordWeekDays,
                     recordWeekDisplay,
