@@ -166,6 +166,10 @@
         .report-table textarea { width: 100%; min-height: 80px; border: 1px solid #ddd; border-radius: 4px; padding: 6px; font-size: 12px; resize: vertical; }
         .report-table textarea:focus { outline: none; border-color: #667eea; }
 
+        /* 工时统计 */
+        .work-hours-section textarea { width: 100%; min-height: 200px; border: 2px solid #e0e0e0; border-radius: 8px; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; }
+        .work-hours-section textarea:focus { outline: none; border-color: #667eea; }
+
         /* 每日记录页面 */
         .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-top: 20px; }
         .day-column { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
@@ -453,6 +457,19 @@
                         <button class="btn-add" @click="exportReport">导出周报Excel</button>
                     </div>
                 </div>
+
+                <!-- 工时统计 -->
+                <div v-if="previewLoaded" class="work-hours-section" style="margin-top:30px;">
+                    <h2 style="font-size:18px;margin-bottom:15px;">工时统计</h2>
+                    <div class="task-input-area">
+                        <div class="task-input-row">
+                            <textarea v-model="workHoursContent" placeholder="工时统计内容..." style="width:100%;min-height:200px;font-size:14px;"></textarea>
+                        </div>
+                        <div class="task-input-row" style="margin-top:10px;justify-content:center;">
+                            <button class="btn-add" @click="generateWorkHours">从已完成任务生成工时</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -523,6 +540,7 @@
                 const planEditContent = ref({});  // 本周计划可编辑内容
                 const completedEditContent = ref({});  // 本周完成情况可编辑内容
                 const previewLoaded = ref(false);
+                const workHoursContent = ref('');  // 工时统计内容
 
                 // 每日记录
                 const recordWeek = ref('');
@@ -1045,10 +1063,41 @@
                                 coordItems.value[cat] = '';
                             });
                             previewLoaded.value = true;
+                            generateWorkHours();
                         }
                     } catch (error) {
                         alert('加载失败: ' + error.message);
                     }
+                };
+
+                const generateWorkHours = () => {
+                    // 按分类生成工时统计
+                    const catNames = {
+                        '教学': '一、教学',
+                        '竞赛': '二、竞赛',
+                        '就业': '三、就业',
+                        '科研': '四、科研',
+                        '项目': '五、项目',
+                        '职能组': '六、职能组',
+                        '院校支撑': '七、院校支撑'
+                    };
+
+                    const lines = [];
+                    const catOrder = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑'];
+
+                    catOrder.forEach(cat => {
+                        const tasks = completedData.value[cat] || [];
+                        if (tasks.length > 0) {
+                            lines.push(catNames[cat]);
+                            tasks.forEach((t, i) => {
+                                const note = t.progress_note ? `：${t.progress_note}` : '';
+                                lines.push(`${i + 1}、${t.name}${note}`);
+                            });
+                            lines.push(''); // 空行分隔
+                        }
+                    });
+
+                    workHoursContent.value = lines.join('\n');
                 };
 
                 const updateWeekPlanContent = (cat) => {
@@ -1148,6 +1197,8 @@
                     updateWeekPlanContent,
                     updateCoordItems,
                     exportReport,
+                    workHoursContent,
+                    generateWorkHours,
                     recordWeek,
                     recordWeekDays,
                     recordWeekDisplay,
