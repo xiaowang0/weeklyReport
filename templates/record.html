@@ -88,14 +88,14 @@
 
             <div class="week-selector">
                 <input type="week" v-model="selectedWeek" @change="loadCompletedTasks">
-                <span style="color: #666;">{{ weekDisplay }}</span>
+                <span style="color: #666;">[[ weekDisplay ]]</span>
             </div>
 
             <div class="week-grid">
                 <div v-for="day in weekDays" :key="day.index" class="day-column">
                     <div class="day-header" :class="{ today: day.isToday }">
-                        {{ day.name }} <span v-if="day.isToday">(今天)</span>
-                        <div style="font-size: 12px; font-weight: normal; opacity: 0.9;">{{ day.date }}</div>
+                        [[ day.name ]] <span v-if="day.isToday">(今天)</span>
+                        <div style="font-size: 12px; font-weight: normal; opacity: 0.9;">[[ day.date ]]</div>
                     </div>
                     <div class="day-content" :class="{ empty: day.tasks.length === 0 }">
                         <div v-if="day.tasks.length === 0">无完成任务</div>

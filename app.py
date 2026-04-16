@@ -156,7 +156,7 @@ def update_task_status(task_id):
     if task['status'] == '已完成':
         task['completed_at'] = datetime.now().strftime('%Y-%m-%d')
     else:
-        task['completed_at'] = task.get('completed_at', '')
+        task['completed_at'] = ''
 
     save_tasks(data)
     return jsonify({'success': True, 'data': task})
