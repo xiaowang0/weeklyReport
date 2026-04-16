@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日记录</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", sans-serif; background: #f5f6fa; min-height: 100vh; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .nav-links { display: flex; gap: 20px; margin-bottom: 20px; padding: 0 20px; }
+        .nav-links a { color: #667eea; text-decoration: none; padding: 8px 16px; border-radius: 8px; }
+        .nav-links a:hover { background: #667eea; color: white; }
+        .nav-links a.active { background: #667eea; color: white; }
+
+        .page-title { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 20px; padding: 0 20px; }
+
+        .week-selector {
+            background: white; padding: 20px; border-radius: 12px;
+            margin-bottom: 20px; display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .week-selector label { font-weight: bold; color: #333; }
+        .week-selector input[type="week"] {
+            padding: 10px 15px; border: 2px solid #e0e0e0;
+            border-radius: 8px; font-size: 16px;
+        }
+        .week-selector input:focus { outline: none; border-color: #667eea; }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+        }
+        .day-column {
+            background: white; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .day-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 12px; text-align: center;
+            font-weight: bold;
+        }
+        .day-header.today { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .day-content { padding: 10px; min-height: 150px; }
+        .day-content.empty { color: #999; text-align: center; font-size: 14px; padding-top: 50px; }
+
+        .task-item {
+            background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 8px;
+            border-left: 3px solid #667eea;
+        }
+        .task-item:last-child { margin-bottom: 0; }
+        .task-item .task-name { font-weight: bold; color: #333; margin-bottom: 4px; font-size: 14px; }
+        .task-item .task-meta { font-size: 12px; color: #888; }
+        .task-item .task-category { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+
+        .category-教学 { background: #ffebee; color: #c62828; }
+        .category-竞赛 { background: #e0f7fa; color: #00838f; }
+        .category-就业 { background: #e3f2fd; color: #1565c0; }
+        .category-科研 { background: #f3e5f5; color: #7b1fa2; }
+        .category-项目 { background: #e8f5e9; color: #2e7d32; }
+        .category-职能组 { background: #fff3e0; color: #e65100; }
+        .category-其他 { background: #eceff1; color: #546e7a; }
+
+        .empty-state { text-align: center; padding: 50px; color: #999; }
+
+        @media (max-width: 900px) {
+            .week-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .week-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="nav-links">
+                <a href="/tasks">任务管理</a>
+                <a href="/daily">每日任务</a>
+                <a href="/record" class="active">每日记录</a>
+                <a href="/report">周报导出</a>
+            </div>
+
+            <div class="page-title">每日记录 - 已完成任务按周汇总</div>
+
+            <div class="week-selector">
+                <input type="week" v-model="selectedWeek" @change="loadCompletedTasks">
+                <span style="color: #666;">{{ weekDisplay }}</span>
+            </div>
+
+            <div class="week-grid">
+                <div v-for="day in weekDays" :key="day.index" class="day-column">
+                    <div class="day-header" :class="{ today: day.isToday }">
+                        {{ day.name }} <span v-if="day.isToday">(今天)</span>
+                        <div style="font-size: 12px; font-weight: normal; opacity: 0.9;">{{ day.date }}</div>
+                    </div>
+                    <div class="day-content" :class="{ empty: day.tasks.length === 0 }">
+                        <div v-if="day.tasks.length === 0">无完成任务</div>
+                        <div v-else>
+                            <div v-for="task in day.tasks" :key="task.id" class="task-item">
+                                <div class="task-name">[[ task.name ]]</div>
+                                <div class="task-meta">
+                                    <span class="task-category" :class="'category-' + task.category">[[ task.category ]]</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                const tasks = ref([]);
+                const selectedWeek = ref('');
+
+                // 获取本地日期字符串 (YYYY-MM-DD)
+                const toLocalDateStr = (date) => {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                };
+
+                // 教学周：第1周从2026-03-02开始
+                const TERM_START = new Date(2026, 2, 2); // 2026-03-02 (周一)
+
+                // 从 YYYY-Www 格式获取该周的周一和教学周数
+                const getWeekInfo = (yearWeek) => {
+                    if (!yearWeek) return { start: '', end: '', weekNum: 0 };
+                    const [year, isoWeek] = yearWeek.split('-W').map(Number);
+                    const jan4 = new Date(year, 0, 4);
+                    const jan4Day = jan4.getDay();
+                    const daysToMon = jan4Day === 0 ? -6 : 1 - jan4Day;
+                    const week1Monday = new Date(jan4);
+                    week1Monday.setDate(jan4.getDate() + daysToMon);
+                    const monday = new Date(week1Monday);
+                    monday.setDate(week1Monday.getDate() + (isoWeek - 1) * 7);
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
+                    const daysSinceTermStart = Math.floor((monday - TERM_START) / (24 * 60 * 60 * 1000));
+                    const teachingWeek = Math.floor(daysSinceTermStart / 7) + 1;
+                    return {
+                        start: toLocalDateStr(monday),
+                        end: toLocalDateStr(sunday),
+                        weekNum: teachingWeek
+                    };
+                };
+
+                const weekDays = computed(() => {
+                    const { start } = getWeekInfo(selectedWeek.value);
+                    if (!start) return [];
+                    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+                    const today = toLocalDateStr(new Date());
+
+                    return days.map((name, index) => {
+                        const date = new Date(start);
+                        date.setDate(date.getDate() + index);
+                        const dateStr = toLocalDateStr(date);
+
+                        // 筛选在该日期完成的任务（按 completed_at 字段）
+                        const dayTasks = tasks.value.filter(t => {
+                            const completedDate = t.completed_at || t.updated_at || t.plan_end || '';
+                            return completedDate === dateStr && t.status === '已完成';
+                        });
+
+                        return {
+                            name,
+                            date: dateStr,
+                            isToday: dateStr === today,
+                            tasks: dayTasks
+                        };
+                    });
+                });
+
+                const weekDisplay = computed(() => {
+                    const { start, end, weekNum } = getWeekInfo(selectedWeek.value);
+                    if (!start || !end) return '';
+                    return `第${weekNum}周 ${start} 至 ${end}`;
+                });
+
+                async function loadCompletedTasks() {
+                    const { start, end } = getWeekInfo(selectedWeek.value);
+                    if (!start || !end) return;
+
+                    try {
+                        const res = await fetch('/api/tasks');
+                        const result = await res.json();
+                        if (result.success) {
+                            // 筛选本周内已完成的任务（按 completed_at）
+                            tasks.value = result.data.filter(t => {
+                                const completedDate = t.completed_at || t.updated_at || '';
+                                return t.status === '已完成' && start <= completedDate && completedDate <= end;
+                            });
+                        }
+                    } catch (error) {
+                        console.error('获取任务失败:', error);
+                    }
+                }
+
+                function getCurrentWeek() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const jan4 = new Date(year, 0, 4);
+                    const jan4Day = jan4.getDay();
+                    const daysToMon = jan4Day === 0 ? -6 : 1 - jan4Day;
+                    const week1Monday = new Date(jan4);
+                    week1Monday.setDate(jan4.getDate() + daysToMon);
+                    const daysSinceMonday = Math.floor((now - week1Monday) / (24 * 60 * 60 * 1000));
+                    const isoWeek = Math.floor(daysSinceMonday / 7) + 1;
+                    return `${year}-W${String(isoWeek).padStart(2, '0')}`;
+                }
+
+                onMounted(() => {
+                    selectedWeek.value = getCurrentWeek();
+                    loadCompletedTasks();
+                });
+
+                return {
+                    tasks,
+                    selectedWeek,
+                    weekDays,
+                    weekDisplay,
+                    loadCompletedTasks
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

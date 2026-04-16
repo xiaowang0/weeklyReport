@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", sans-serif; background: #f5f6fa; min-height: 100vh; }
+
+        .app-layout { display: flex; min-height: 100vh; }
+
+        /* 左侧导航 */
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+        .sidebar-title {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 20px;
+        }
+        .nav-item {
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.1); }
+        .nav-item.active { background: rgba(255,255,255,0.2); border-left: 3px solid white; }
+        .nav-icon { font-size: 18px; }
+
+        /* 右侧内容 */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* 任务管理页样式 */
+        .page-title { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 20px; }
+
+        .task-input-area {
+            background: white; border-radius: 16px; padding: 20px;
+            margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .task-input-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .task-input-row:last-child { margin-bottom: 0; }
+
+        input[type="text"], input[type="date"], select {
+            padding: 12px 16px; border: 2px solid #e0e0e0;
+            border-radius: 10px; font-size: 14px; background: white;
+        }
+        input[type="text"] { flex: 1; min-width: 200px; }
+        input:focus, select:focus { outline: none; border-color: #667eea; }
+        select { min-width: 120px; cursor: pointer; }
+
+        .btn-add {
+            padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; border-radius: 10px;
+            font-size: 15px; cursor: pointer; font-weight: bold;
+        }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+
+        .task-list { list-style: none; }
+        .task-card {
+            background: white; border-radius: 12px; padding: 15px 20px;
+            margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex; align-items: center; transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .task-card:hover { transform: translateX(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .task-card.completed { opacity: 0.6; border-left-color: #ccc; }
+        .task-card.completed .task-name-input { text-decoration: line-through; color: #999; }
+
+        .task-card[data-category="教学"] { border-left-color: #ff6b6b; }
+        .task-card[data-category="竞赛"] { border-left-color: #4ecdc4; }
+        .task-card[data-category="就业"] { border-left-color: #45b7d1; }
+        .task-card[data-category="科研"] { border-left-color: #a55eea; }
+        .task-card[data-category="项目"] { border-left-color: #26de81; }
+        .task-card[data-category="职能组"] { border-left-color: #ffa502; }
+        .task-card[data-category="其他"] { border-left-color: #dfe6e9; }
+
+        .task-checkbox {
+            width: 20px; height: 20px; margin-right: 15px;
+            cursor: pointer; accent-color: #667eea; flex-shrink: 0;
+        }
+        .task-name-input {
+            flex: 1; font-size: 16px; border: 1px solid transparent;
+            background: transparent; padding: 5px 8px; border-radius: 6px;
+        }
+        .task-name-input:focus {
+            outline: none; border-color: #667eea; background: #fff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        .task-meta { font-size: 13px; color: #888; margin-left: 15px; white-space: nowrap; }
+
+        .priority-select {
+            padding: 5px 8px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 13px; cursor: pointer; background: white;
+        }
+        .priority-select:focus { outline: none; border-color: #667eea; }
+
+        .sort-actions { display: flex; gap: 2px; margin-left: 5px; }
+        .sort-btn { font-size: 12px !important; padding: 4px 6px !important; }
+
+        .task-actions { display: flex; gap: 4px; margin-left: 10px; }
+        .action-btn {
+            background: none; border: none; color: #ccc;
+            cursor: pointer; font-size: 16px; padding: 5px 8px;
+            border-radius: 6px; transition: all 0.2s;
+        }
+        .action-btn:hover { background: #f0f0f0; color: #667eea; }
+        .action-btn.delete:hover { color: #ff4757; background: #ffebee; }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: #999; }
+        .empty-icon { font-size: 48px; margin-bottom: 15px; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 400px; width: 90%; }
+        .modal-content h3 { margin-top: 0; }
+        .modal-content textarea {
+            width: 100%; padding: 12px; border: 2px solid #e0e0e0;
+            border-radius: 12px; resize: vertical; min-height: 80px; margin: 15px 0;
+        }
+        .modal-content textarea:focus { outline: none; border-color: #667eea; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; }
+        .btn-cancel { background: #e0e0e0; color: #333; }
+        .btn-danger { background: #ff6b6b; color: white; }
+
+        .category-tabs {
+            display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .category-tab {
+            padding: 8px 16px; background: white; border: 1px solid #ddd;
+            border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .category-tab:hover { border-color: #667eea; color: #667eea; }
+        .category-tab.active { background: #667eea; color: white; border-color: #667eea; }
+
+        /* 周报预览表格 */
+        .report-preview { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .report-table th, .report-table td { border: 1px solid #ddd; padding: 8px 10px; vertical-align: top; }
+        .report-table .title-row td { background: #1890ff; color: white; text-align: center; font-size: 16px; font-weight: bold; padding: 12px; }
+        .report-table .info-row td { background: #f5f5f5; }
+        .report-table .info-row td:first-child { font-weight: bold; width: 80px; }
+        .report-table .header-row th { background: #e6f7ff; text-align: center; font-weight: bold; }
+        .report-table .category-cell { background: #fafafa; font-weight: bold; text-align: center; width: 80px; }
+        .report-table .edit-cell { width: 20%; }
+        .report-table textarea { width: 100%; min-height: 80px; border: 1px solid #ddd; border-radius: 4px; padding: 6px; font-size: 12px; resize: vertical; }
+        .report-table textarea:focus { outline: none; border-color: #667eea; }
+
+        /* 每日记录页面 */
+        .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-top: 20px; }
+        .day-column { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .day-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+        .day-header.today { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .day-content { padding: 10px; min-height: 120px; }
+        .day-content.empty { background: #fafafa; }
+        .task-item { background: #f8f9fa; border-radius: 6px; padding: 8px; margin-bottom: 6px; border-left: 3px solid #667eea; }
+        .task-item:last-child { margin-bottom: 0; }
+        .task-item .task-name { font-weight: bold; color: #333; font-size: 13px; }
+        .task-category { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+        .category-教学 { background: #ffebee; color: #c62828; }
+        .category-竞赛 { background: #e0f7fa; color: #00838f; }
+        .category-就业 { background: #e3f2fd; color: #1565c0; }
+        .category-科研 { background: #f3e5f5; color: #7b1fa2; }
+        .category-项目 { background: #e8f5e9; color: #2e7d32; }
+        .category-职能组 { background: #fff3e0; color: #e65100; }
+        .category-其他 { background: #eceff1; color: #546e7a; }
+        @media (max-width: 1100px) { .week-grid { grid-template-columns: repeat(4, 1fr); } }
+        @media (max-width: 600px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        /* 今日提醒页面 */
+        .remind-list { margin-top: 20px; }
+        .remind-item {
+            background: white; border-radius: 10px; padding: 15px 20px;
+            margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .remind-content { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .remind-content input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #667eea; }
+        .remind-content .done { text-decoration: line-through; color: #999; }
+        .remind-item .action-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 5px; }
+        .remind-item .action-btn.delete:hover { color: #ff4757; }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-layout">
+        <!-- 左侧导航 -->
+        <aside class="sidebar">
+            <div class="sidebar-title">📋 工作周报</div>
+            <div class="nav-item" :class="{ active: currentPage === 'tasks' }" @click="goPage('tasks')">
+                <span class="nav-icon">📝</span>
+                <span>任务管理</span>
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'daily' }" @click="goPage('daily')">
+                <span class="nav-icon">📅</span>
+                <span>任务预览</span>
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'report' }" @click="goPage('report')">
+                <span class="nav-icon">📊</span>
+                <span>周报导出</span>
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'record' }" @click="goPage('record')">
+                <span class="nav-icon">📝</span>
+                <span>每日记录</span>
+            </div>
+            <div class="nav-item" :class="{ active: currentPage === 'remind' }" @click="goPage('remind')">
+                <span class="nav-icon">🔔</span>
+                <span>今日提醒</span>
+            </div>
+        </aside>
+
+        <!-- 右侧内容 -->
+        <main class="main-content">
+            <!-- 任务管理页 -->
+            <div v-if="currentPage === 'tasks'">
+                <h1 class="page-title">[[ currentCategory === 'all' ? '任务管理' : currentCategory ]]</h1>
+
+                <!-- 分类切换 -->
+                <div class="category-tabs">
+                    <div class="category-tab" :class="{ active: currentCategory === 'all' }" @click="switchCategory('all')">紧急任务</div>
+                    <div class="category-tab" :class="{ active: currentCategory === '教学' }" @click="switchCategory('教学')">教学</div>
+                    <div class="category-tab" :class="{ active: currentCategory === '竞赛' }" @click="switchCategory('竞赛')">竞赛</div>
+                    <div class="category-tab" :class="{ active: currentCategory === '就业' }" @click="switchCategory('就业')">就业</div>
+                    <div class="category-tab" :class="{ active: currentCategory === '科研' }" @click="switchCategory('科研')">科研</div>
+                    <div class="category-tab" :class="{ active: currentCategory === '项目' }" @click="switchCategory('项目')">项目</div>
+                    <div class="category-tab" :class="{ active: currentCategory === '职能组' }" @click="switchCategory('职能组')">职能组</div>
+                </div>
+
+                <!-- 任务输入区 -->
+                <div class="task-input-area">
+                    <div class="task-input-row">
+                        <input type="text" v-model="newTask.name" placeholder="输入任务名称..." @keydown.enter="addTask">
+                        <select v-model="newTask.category">
+                            <option value="教学">📚 教学</option>
+                            <option value="竞赛">🏆 竞赛</option>
+                            <option value="就业">💼 就业</option>
+                            <option value="科研">🔬 科研</option>
+                            <option value="项目">💻 项目</option>
+                            <option value="职能组">👥 职能组</option>
+                            <option value="其他">📝 其他</option>
+                        </select>
+                        <select v-model="newTask.priority">
+                            <option value="高">🔴 高</option>
+                            <option value="中" selected>🟡 中</option>
+                            <option value="低">🟢 低</option>
+                        </select>
+                    </div>
+                    <div class="task-input-row">
+                        <input type="date" v-model="newTask.plan_start">
+                        <span style="color:#888;line-height:44px;">至</span>
+                        <input type="date" v-model="newTask.plan_end">
+                        <button class="btn-add" @click="addTask">添加任务</button>
+                    </div>
+                </div>
+
+                <!-- 任务列表 -->
+                <ul class="task-list">
+                    <li v-for="task in filteredTasks" :key="task.id"
+                        class="task-card"
+                        :class="{ completed: task.status === '已完成' }"
+                        :data-category="task.category">
+                        <input type="checkbox" class="task-checkbox" :checked="task.status === '已完成'" @change="toggleComplete(task)">
+                        <input type="text" class="task-name-input"
+                            :class="{ completed: task.status === '已完成' }"
+                            :value="task.name"
+                            @blur="saveTaskName(task, $event.target.value)"
+                            @keydown.enter="$event.target.blur()">
+                        <select class="priority-select" :value="task.priority" @change="updatePriority(task, $event.target.value)">
+                            <option value="高">🔴 高</option>
+                            <option value="中">🟡 中</option>
+                            <option value="低">🟢 低</option>
+                        </select>
+                        <div class="sort-actions">
+                            <button class="action-btn sort-btn" @click="moveTaskUp(task)" title="上移">⬆️</button>
+                            <button class="action-btn sort-btn" @click="moveTaskDown(task)" title="下移">⬇️</button>
+                        </div>
+                        <div class="task-actions">
+                            <button class="action-btn" @click="openPauseModal(task)" title="暂停">⏸️</button>
+                            <button class="action-btn delete" @click="openDeleteModal(task)" title="删除">❌</button>
+                        </div>
+                    </li>
+                </ul>
+
+                <div v-if="filteredTasks.length === 0" class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>[[ currentCategory === 'all' ? '暂无紧急任务（高优先级）' : '暂无' + currentCategory + '分类的任务' ]]</p>
+                </div>
+            </div>
+
+            <!-- 任务预览页 -->
+            <div v-if="currentPage === 'daily'">
+                <h1 class="page-title">任务预览</h1>
+                <div class="task-input-area">
+                    <div class="task-input-row">
+                        <input type="date" v-model="selectedDate">
+                        <select v-model="statusFilter">
+                            <option value="全部">全部状态</option>
+                            <option value="未开始">未开始</option>
+                            <option value="进行中">进行中</option>
+                            <option value="已完成">已完成</option>
+                            <option value="暂停">暂停</option>
+                        </select>
+                        <button class="btn-add" @click="loadDailyTasks">查询</button>
+                    </div>
+                </div>
+
+                <div v-for="cat in categoriesWithTasks" :key="cat.name" class="task-card" :style="{ borderLeftColor: getCategoryColor(cat.name) }" style="margin-bottom:15px;">
+                    <div style="width:100%;">
+                        <div :style="{ background: getCategoryColor(cat.name), color: 'white' }" style="font-weight:bold;font-size:15px;padding:10px 15px;border-radius:6px;margin-bottom:5px;">[[ cat.name ]]</div>
+                        <div v-for="task in cat.tasks" :key="task.id" style="padding:8px 0;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;">
+                            <span>[[ task.name ]]</span>
+                            <span :class="'status-' + task.status" style="padding:2px 8px;border-radius:4px;font-size:12px;" :style="getStatusStyle(task.status)">[[ task.status ]]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="categoriesWithTasks.length === 0" class="empty-state">
+                    <div class="empty-icon">📅</div>
+                    <p>该日期没有任务</p>
+                </div>
+            </div>
+
+            <!-- 每日记录页 -->
+            <div v-if="currentPage === 'record'">
+                <h1 class="page-title">每日记录</h1>
+                <div class="task-input-area">
+                    <div class="task-input-row">
+                        <input type="week" v-model="recordWeek">
+                        <span style="color:#666;line-height:44px;">[[ recordWeekDisplay ]]</span>
+                    </div>
+                </div>
+
+                <div class="week-grid">
+                    <div v-for="day in recordWeekDays" :key="day.index" class="day-column">
+                        <div class="day-header" :class="{ today: day.isToday }">
+                            [[ day.name ]]
+                            <span v-if="day.isToday" style="font-size:11px;">(今天)</span>
+                            <div style="font-size:11px;opacity:0.9;">[[ day.date ]]</div>
+                        </div>
+                        <div class="day-content" :class="{ empty: day.tasks.length === 0 }">
+                            <div v-if="day.tasks.length === 0" style="color:#999;text-align:center;font-size:13px;padding-top:50px;">无完成任务</div>
+                            <div v-else>
+                                <div v-for="task in day.tasks" :key="task.id" class="task-item">
+                                    <div class="task-name">[[ task.name ]]</div>
+                                    <div style="font-size:11px;color:#888;margin-top:4px;">
+                                        <span class="task-category" :class="'category-' + task.category">[[ task.category ]]</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今日提醒页 -->
+            <div v-if="currentPage === 'remind'">
+                <h1 class="page-title">今日提醒</h1>
+                <div class="task-input-area">
+                    <div class="task-input-row">
+                        <input type="text" v-model="remindText" placeholder="输入提醒内容..." style="flex:1;" @keydown.enter="addRemind">
+                        <button class="btn-add" @click="addRemind">添加</button>
+                    </div>
+                </div>
+
+                <div class="remind-list">
+                    <div v-if="todayReminds.length === 0" class="empty-state">
+                        <div class="empty-icon">🔔</div>
+                        <p>暂无提醒</p>
+                    </div>
+                    <div v-for="(item, index) in todayReminds" :key="item.id" class="remind-item">
+                        <div class="remind-content">
+                            <input type="checkbox" v-model="item.done" @change="saveReminds">
+                            <span :class="{ done: item.done }">[[ item.text ]]</span>
+                        </div>
+                        <button class="action-btn delete" @click="deleteRemind(index)">❌</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 周报导出页 -->
+            <div v-if="currentPage === 'report'">
+                <h1 class="page-title">周报导出</h1>
+                <div class="task-input-area">
+                    <div class="task-input-row">
+                        <input type="date" v-model="startDate">
+                        <span style="color:#888;line-height:44px;">至</span>
+                        <input type="date" v-model="endDate">
+                        <button class="btn-add" @click="loadPreview">加载预览</button>
+                    </div>
+                </div>
+
+                <!-- 周报预览表格 -->
+                <div v-if="previewLoaded" class="report-preview">
+                    <table class="report-table">
+                        <tr class="title-row">
+                            <td colspan="5">工作周报</td>
+                        </tr>
+                        <tr class="info-row">
+                            <td>汇报人</td>
+                            <td>王弯弯</td>
+                            <td>汇报时间段</td>
+                            <td colspan="2">[[ startDate ]] 至 [[ endDate ]]</td>
+                        </tr>
+                        <tr class="info-row">
+                            <td>所属项目</td>
+                            <td>河工大</td>
+                            <td>提交时间</td>
+                            <td colspan="2">[[ submitDate ]]</td>
+                        </tr>
+                        <tr class="header-row">
+                            <th>工作分类</th>
+                            <th>本周计划</th>
+                            <th>本周完成情况</th>
+                            <th>下周工作计划</th>
+                            <th>待协调、支撑事项</th>
+                        </tr>
+                        <tr v-for="cat in reportCategories" :key="cat.name">
+                            <td class="category-cell">[[ cat.name ]]</td>
+                            <td class="edit-cell">
+                                <textarea v-model="planEditContent[cat.name]" :placeholder="'本周' + cat.name + '计划...'"></textarea>
+                            </td>
+                            <td class="edit-cell">
+                                <textarea v-model="completedEditContent[cat.name]" :placeholder="'本周完成情况...'"></textarea>
+                            </td>
+                            <td class="edit-cell">
+                                <textarea v-model="weekPlanContent[cat.name]" :placeholder="'下周' + cat.name + '计划...'"></textarea>
+                            </td>
+                            <td class="edit-cell">
+                                <textarea v-model="coordItems[cat.name]" :placeholder="'待协调事项...'"></textarea>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="text-align:center;margin-top:20px;">
+                        <button class="btn-add" @click="exportReport">导出周报Excel</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 暂停弹窗 -->
+        <div class="modal" :class="{ active: showPauseModal }">
+            <div class="modal-content">
+                <h3>填写暂停原因</h3>
+                <textarea v-model="pauseReason" placeholder="请输入暂停原因..."></textarea>
+                <div class="modal-actions">
+                    <button class="btn btn-cancel" @click="closePauseModal">取消</button>
+                    <button class="btn" style="background:#ffa502;color:white;" @click="confirmPause">确认暂停</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 删除弹窗 -->
+        <div class="modal" :class="{ active: showDeleteModal }">
+            <div class="modal-content">
+                <h3>确认删除</h3>
+                <p>确定要删除这个任务吗？此操作不可撤销。</p>
+                <div class="modal-actions">
+                    <button class="btn btn-cancel" @click="closeDeleteModal">取消</button>
+                    <button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            delimiters: ['[[', ']]'],
+            setup() {
+                // 页面状态
+                const currentPage = ref('tasks');
+                const currentCategory = ref('all');
+
+                // 任务数据
+                const tasks = ref([]);
+                const newTask = ref({
+                    name: '',
+                    category: '教学',
+                    priority: '中',
+                    plan_start: '',
+                    plan_end: ''
+                });
+
+                // 弹窗状态
+                const showPauseModal = ref(false);
+                const showDeleteModal = ref(false);
+                const currentTask = ref(null);
+                const pauseReason = ref('');
+
+                // 每日任务
+                const selectedDate = ref('');
+                const statusFilter = ref('全部');
+                const dailyTasks = ref([]);
+                const categories = ['教学', '竞赛', '就业', '科研', '项目', '职能组', '院校支撑'];
+
+                // 周报
+                const startDate = ref('');
+                const endDate = ref('');
+                const completedData = ref({});
+                const weekPlanData = ref({});
+                const weekPlanContent = ref({});
+                const coordItems = ref({});
+                const planEditContent = ref({});  // 本周计划可编辑内容
+                const completedEditContent = ref({});  // 本周完成情况可编辑内容
+                const previewLoaded = ref(false);
+
+                // 每日记录
+                const recordWeek = ref('');
+                const allTasks = ref([]);
+
+                // 今日提醒
+                const remindText = ref('');
+                const reminds = ref([]);
+
+                const getTodayKey = () => toLocalDateStr(new Date());
+
+                const loadReminds = () => {
+                    const data = localStorage.getItem('dailyReminds');
+                    const all = data ? JSON.parse(data) : {};
+                    const today = getTodayKey();
+                    reminds.value = all[today] || [];
+                };
+
+                const saveReminds = () => {
+                    const data = localStorage.getItem('dailyReminds');
+                    const all = data ? JSON.parse(data) : {};
+                    const today = getTodayKey();
+                    all[today] = reminds.value;
+                    localStorage.setItem('dailyReminds', JSON.stringify(all));
+                };
+
+                const addRemind = () => {
+                    const text = remindText.value.trim();
+                    if (!text) return;
+                    reminds.value.push({
+                        id: Date.now(),
+                        text: text,
+                        done: false
+                    });
+                    saveReminds();
+                    remindText.value = '';
+                };
+
+                const deleteRemind = (index) => {
+                    reminds.value.splice(index, 1);
+                    saveReminds();
+                };
+
+                const todayReminds = computed(() => reminds.value);
+
+                // 计算属性
+                const filteredTasks = computed(() => {
+                    let filtered;
+                    if (currentCategory.value === 'all') {
+                        filtered = tasks.value.filter(t => t.priority === '高');
+                    } else {
+                        filtered = tasks.value.filter(t => t.category === currentCategory.value);
+                    }
+                    // 按 sort_order 排序
+                    return filtered.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+                });
+
+                const categoriesWithTasks = computed(() => {
+                    return categories
+                        .map(cat => ({
+                            name: cat,
+                            tasks: dailyTasks.value.filter(t => {
+                                const matchCat = t.category === cat;
+                                const matchStatus = statusFilter.value === '全部' || t.status === statusFilter.value;
+                                return matchCat && matchStatus;
+                            })
+                        }))
+                        .filter(cat => cat.tasks.length > 0);
+                });
+
+                const completedCategories = computed(() => {
+                    return categories
+                        .map(cat => ({
+                            name: cat,
+                            tasks: completedData.value[cat] || []
+                        }))
+                        .filter(cat => cat.tasks.length > 0);
+                });
+
+                const reportCategories = computed(() => {
+                    return categories.map(cat => ({ name: cat }));
+                });
+
+                // 每日记录相关计算属性
+                // 教学周：第1周从2026-03-02开始
+                const TERM_START = new Date(2026, 2, 2); // 2026-03-02 (周一)
+
+                // 从 YYYY-Www 格式获取该周的周一和教学周数
+                const getWeekInfo = (yearWeek) => {
+                    if (!yearWeek) return { start: '', end: '', weekNum: 0 };
+                    const [year, isoWeek] = yearWeek.split('-W').map(Number);
+                    // 计算该 ISO 周的周一
+                    const jan4 = new Date(year, 0, 4);
+                    const jan4Day = jan4.getDay();
+                    const daysToMon = jan4Day === 0 ? -6 : 1 - jan4Day;
+                    const week1Monday = new Date(jan4);
+                    week1Monday.setDate(jan4.getDate() + daysToMon);
+                    const monday = new Date(week1Monday);
+                    monday.setDate(week1Monday.getDate() + (isoWeek - 1) * 7);
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
+                    // 计算教学周数
+                    const daysSinceTermStart = Math.floor((monday - TERM_START) / (24 * 60 * 60 * 1000));
+                    const teachingWeek = Math.floor(daysSinceTermStart / 7) + 1;
+                    return {
+                        start: toLocalDateStr(monday),
+                        end: toLocalDateStr(sunday),
+                        weekNum: teachingWeek
+                    };
+                };
+
+                const recordWeekDays = computed(() => {
+                    const { start } = getWeekInfo(recordWeek.value);
+                    if (!start) return [];
+                    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+                    const today = toLocalDateStr(new Date());
+
+                    return days.map((name, index) => {
+                        const date = new Date(start);
+                        date.setDate(date.getDate() + index);
+                        const dateStr = toLocalDateStr(date);
+
+                        // 筛选在该日期完成的任务（按 completed_at 字段）
+                        const dayTasks = allTasks.value.filter(t => {
+                            const completedDate = t.completed_at || t.updated_at || t.plan_end || '';
+                            return completedDate === dateStr && t.status === '已完成';
+                        });
+
+                        return {
+                            name,
+                            date: dateStr,
+                            isToday: dateStr === today,
+                            tasks: dayTasks
+                        };
+                    });
+                });
+
+                const recordWeekDisplay = computed(() => {
+                    const { start, end, weekNum } = getWeekInfo(recordWeek.value);
+                    if (!start || !end) return '';
+                    return `第${weekNum}周 ${start} 至 ${end}`;
+                });
+
+                const submitDate = computed(() => {
+                    return toLocalDateStr(new Date());
+                });
+
+                const getPlanText = (cat) => {
+                    const catTasks = weekPlanData.value[cat] || [];
+                    if (catTasks.length === 0) return '-';
+                    return catTasks.map((t, i) => `${i + 1}. ${t.name}`).join('<br>');
+                };
+
+                const getCompletedText = (cat) => {
+                    const catTasks = completedData.value[cat] || [];
+                    if (catTasks.length === 0) return '-';
+                    return catTasks.map((t, i) => `${i + 1}. 完成${t.name}${t.progress_note ? '：' + t.progress_note : ''}`).join('<br>');
+                };
+
+                // 加载任务
+                const loadTasks = async () => {
+                    try {
+                        const res = await fetch('/api/tasks');
+                        const result = await res.json();
+                        if (result.success) {
+                            tasks.value = result.data;
+                        }
+                    } catch (error) {
+                        console.error('获取任务失败:', error);
+                    }
+                };
+
+                // 添加任务
+                const addTask = async () => {
+                    if (!newTask.value.name || !newTask.value.plan_start || !newTask.value.plan_end) {
+                        alert('请填写任务名称和计划时间');
+                        return;
+                    }
+
+                    // 计算新任务的 sort_order（同类别的最大值 + 1）
+                    const sameCategoryTasks = tasks.value.filter(t => t.category === newTask.value.category);
+                    const maxSortOrder = sameCategoryTasks.reduce((max, t) => Math.max(max, t.sort_order || 0), 0);
+
+                    try {
+                        const res = await fetch('/api/tasks', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: newTask.value.name,
+                                category: newTask.value.category,
+                                priority: newTask.value.priority,
+                                plan_start: newTask.value.plan_start,
+                                plan_end: newTask.value.plan_end,
+                                status: '未开始',
+                                sort_order: maxSortOrder + 1
+                            })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            newTask.value.name = '';
+                            loadTasks();
+                        }
+                    } catch (error) {
+                        console.error('创建任务失败:', error);
+                    }
+                };
+
+                // 切换分类
+                const switchCategory = (cat) => {
+                    currentCategory.value = cat;
+                    newTask.value.category = cat === 'all' ? '教学' : cat;
+                    setDefaultDates();
+                };
+
+                // 设置默认日期
+                const setDefaultDates = () => {
+                    const today = new Date();
+                    const dayOfWeek = today.getDay();
+                    const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+                    const sunday = new Date(today);
+                    sunday.setDate(today.getDate() + daysUntilSunday);
+
+                    newTask.value.plan_start = toLocalDateStr(today);
+                    newTask.value.plan_end = toLocalDateStr(sunday);
+                };
+
+                // 分类颜色
+                const categoryColors = {
+                    '教学': '#ff6b6b',
+                    '竞赛': '#4ecdc4',
+                    '就业': '#45b7d1',
+                    '科研': '#a55eea',
+                    '项目': '#26de81',
+                    '职能组': '#ffa502',
+                    '院校支撑': '#dfe6e9'
+                };
+
+                const getCategoryColor = (cat) => categoryColors[cat] || '#667eea';
+
+                // 获取本地日期字符串 (YYYY-MM-DD)
+                const toLocalDateStr = (date) => {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                };
+
+                // 状态样式
+                const getStatusStyle = (status) => {
+                    const styles = {
+                        '未开始': 'background:#e9ecef;color:#666;',
+                        '进行中': 'background:#17a2b8;color:white;',
+                        '已完成': 'background:#28a745;color:white;',
+                        '暂停': 'background:#ffc107;color:#212529;'
+                    };
+                    return styles[status] || '';
+                };
+
+                // 保存任务名称
+                const saveTaskName = async (task, newName) => {
+                    const trimmedName = newName.trim();
+                    if (!trimmedName || trimmedName === task.name) return;
+
+                    try {
+                        await fetch(`/api/tasks/${task.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: trimmedName })
+                        });
+                        loadTasks();
+                    } catch (error) {
+                        console.error('保存任务名称失败:', error);
+                    }
+                };
+
+                // 更新优先级
+                const updatePriority = async (task, newPriority) => {
+                    try {
+                        await fetch(`/api/tasks/${task.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ priority: newPriority })
+                        });
+                        loadTasks();
+                    } catch (error) {
+                        console.error('更新优先级失败:', error);
+                    }
+                };
+
+                // 上移任务
+                const moveTaskUp = async (task) => {
+                    const sameCategoryTasks = tasks.value
+                        .filter(t => t.category === task.category && t.id !== task.id)
+                        .sort((a, b) => a.sort_order - b.sort_order);
+
+                    const currentIndex = sameCategoryTasks.findIndex(t => t.id === task.id);
+                    if (currentIndex <= 0) return; // 已在顶部
+
+                    // 交换两个任务的 sort_order
+                    const prevTask = sameCategoryTasks[currentIndex - 1];
+                    const tempOrder = task.sort_order;
+
+                    try {
+                        await fetch(`/api/tasks/${task.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sort_order: prevTask.sort_order })
+                        });
+                        await fetch(`/api/tasks/${prevTask.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sort_order: tempOrder })
+                        });
+                        loadTasks();
+                    } catch (error) {
+                        console.error('排序失败:', error);
+                    }
+                };
+
+                // 下移任务
+                const moveTaskDown = async (task) => {
+                    const sameCategoryTasks = tasks.value
+                        .filter(t => t.category === task.category && t.id !== task.id)
+                        .sort((a, b) => a.sort_order - b.sort_order);
+
+                    const currentIndex = sameCategoryTasks.findIndex(t => t.id === task.id);
+                    if (currentIndex === -1 || currentIndex >= sameCategoryTasks.length - 1) return; // 已在底部
+
+                    // 交换两个任务的 sort_order
+                    const nextTask = sameCategoryTasks[currentIndex + 1];
+                    const tempOrder = task.sort_order;
+
+                    try {
+                        await fetch(`/api/tasks/${task.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sort_order: nextTask.sort_order })
+                        });
+                        await fetch(`/api/tasks/${nextTask.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sort_order: tempOrder })
+                        });
+                        loadTasks();
+                    } catch (error) {
+                        console.error('排序失败:', error);
+                    }
+                };
+
+                // 切换完成状态
+                const toggleComplete = async (task) => {
+                    const newStatus = task.status === '已完成' ? '未开始' : '已完成';
+                    try {
+                        await fetch(`/api/tasks/${task.id}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        loadTasks();
+                    } catch (error) {
+                        console.error('更新状态失败:', error);
+                    }
+                };
+
+                // 暂停弹窗
+                const openPauseModal = (task) => {
+                    currentTask.value = task;
+                    pauseReason.value = '';
+                    showPauseModal.value = true;
+                };
+                const closePauseModal = () => {
+                    showPauseModal.value = false;
+                    currentTask.value = null;
+                };
+                const confirmPause = async () => {
+                    if (!pauseReason.value.trim()) {
+                        alert('请输入暂停原因');
+                        return;
+                    }
+                    try {
+                        await fetch(`/api/tasks/${currentTask.value.id}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: '暂停', pause_reason: pauseReason.value })
+                        });
+                        closePauseModal();
+                        loadTasks();
+                    } catch (error) {
+                        console.error('更新状态失败:', error);
+                    }
+                };
+
+                // 删除弹窗
+                const openDeleteModal = (task) => {
+                    currentTask.value = task;
+                    showDeleteModal.value = true;
+                };
+                const closeDeleteModal = () => {
+                    showDeleteModal.value = false;
+                    currentTask.value = null;
+                };
+                const confirmDelete = async () => {
+                    try {
+                        await fetch(`/api/tasks/${currentTask.value.id}`, { method: 'DELETE' });
+                        closeDeleteModal();
+                        loadTasks();
+                    } catch (error) {
+                        console.error('删除任务失败:', error);
+                    }
+                };
+
+                // 页面导航
+                const goPage = (page) => {
+                    currentPage.value = page;
+                    if (page === 'daily') {
+                        loadDailyTasks();
+                    } else if (page === 'report') {
+                        initReportDates();
+                    } else if (page === 'record') {
+                        loadRecordTasks();
+                    } else if (page === 'remind') {
+                        loadReminds();
+                    }
+                };
+
+                // 每日任务
+                const loadDailyTasks = async () => {
+                    if (!selectedDate.value) {
+                        alert('请选择日期');
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/daily?date=${selectedDate.value}`);
+                        const result = await res.json();
+                        if (result.success) {
+                            dailyTasks.value = result.data;
+                        }
+                    } catch (error) {
+                        console.error('获取任务失败:', error);
+                    }
+                };
+
+                // 每日记录
+                const loadRecordTasks = async () => {
+                    try {
+                        const res = await fetch('/api/tasks');
+                        const result = await res.json();
+                        if (result.success) {
+                            allTasks.value = result.data;
+                        }
+                    } catch (error) {
+                        console.error('获取任务失败:', error);
+                    }
+                };
+
+                const getCurrentWeek = () => {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    // 计算 ISO 周
+                    const jan4 = new Date(year, 0, 4);
+                    const jan4Day = jan4.getDay();
+                    const daysToMon = jan4Day === 0 ? -6 : 1 - jan4Day;
+                    const week1Monday = new Date(jan4);
+                    week1Monday.setDate(jan4.getDate() + daysToMon);
+                    const daysSinceMonday = Math.floor((now - week1Monday) / (24 * 60 * 60 * 1000));
+                    const isoWeek = Math.floor(daysSinceMonday / 7) + 1;
+                    return `${year}-W${String(isoWeek).padStart(2, '0')}`;
+                };
+
+                // 周报
+                const initReportDates = () => {
+                    const today = new Date();
+                    const todayDay = today.getDay();
+                    const mondayOffset = todayDay === 0 ? -6 : 1 - todayDay;
+                    const monday = new Date(today);
+                    monday.setDate(today.getDate() - (todayDay - 1));
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
+
+                    startDate.value = toLocalDateStr(monday);
+                    endDate.value = toLocalDateStr(sunday);
+                };
+
+                const loadPreview = async () => {
+                    if (!startDate.value || !endDate.value) {
+                        alert('请选择日期范围');
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/report/preview?start_date=${startDate.value}&end_date=${endDate.value}`);
+                        const result = await res.json();
+                        if (result.success) {
+                            weekPlanData.value = result.data.week_plan;
+                            completedData.value = result.data.completed;
+                            // 初始化每个分类的编辑内容
+                            categories.forEach(cat => {
+                                // 本周计划 - 从 weekPlanData 获取并转为可编辑文本
+                                const planTasks = weekPlanData.value[cat] || [];
+                                if (planTasks.length > 0) {
+                                    planEditContent.value[cat] = planTasks.map((t, i) => `${i + 1}. ${t.name}`).join('\n');
+                                } else {
+                                    planEditContent.value[cat] = '';
+                                }
+
+                                // 本周完成情况 - 从 completedData 获取并转为可编辑文本
+                                const compTasks = completedData.value[cat] || [];
+                                if (compTasks.length > 0) {
+                                    completedEditContent.value[cat] = compTasks.map((t, i) => {
+                                        let text = `${i + 1}. 完成${t.name}`;
+                                        if (t.progress_note) {
+                                            text += `：${t.progress_note}`;
+                                        }
+                                        return text;
+                                    }).join('\n');
+                                } else {
+                                    completedEditContent.value[cat] = '';
+                                }
+
+                                weekPlanContent.value[cat] = '';
+                                coordItems.value[cat] = '';
+                            });
+                            previewLoaded.value = true;
+                        }
+                    } catch (error) {
+                        alert('加载失败: ' + error.message);
+                    }
+                };
+
+                const updateWeekPlanContent = (cat) => {
+                    // v-model 自动更新
+                };
+
+                const updateCoordItems = (cat) => {
+                    // v-model 自动更新
+                };
+
+                const exportReport = async () => {
+                    try {
+                        const res = await fetch('/api/report/generate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                start_date: startDate.value,
+                                end_date: endDate.value,
+                                week_plan_content: planEditContent.value,  // 本周计划（已编辑）
+                                completed_content: completedEditContent.value,  // 本周完成情况（已编辑）
+                                next_week_plan: weekPlanContent.value,  // 下周计划
+                                coordinated_items: coordItems.value
+                            })
+                        });
+
+                        if (!res.ok) throw new Error('导出失败');
+
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `周报_${startDate.value}_${endDate.value}.xlsx`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                        alert('导出失败: ' + error.message);
+                    }
+                };
+
+                // 初始化
+                onMounted(() => {
+                    setDefaultDates();
+                    loadTasks();
+                    selectedDate.value = toLocalDateStr(new Date());
+                    initReportDates();
+                    loadPreview(); // 自动加载周报预览
+                    loadDailyTasks(); // 自动加载任务预览
+                    recordWeek.value = getCurrentWeek();
+                    loadRecordTasks();
+                    loadReminds();
+                });
+
+                return {
+                    currentPage,
+                    currentCategory,
+                    tasks,
+                    newTask,
+                    filteredTasks,
+                    showPauseModal,
+                    showDeleteModal,
+                    pauseReason,
+                    selectedDate,
+                    statusFilter,
+                    categoriesWithTasks,
+                    startDate,
+                    endDate,
+                    completedCategories,
+                    reportCategories,
+                    submitDate,
+                    planEditContent,
+                    completedEditContent,
+                    weekPlanContent,
+                    coordItems,
+                    previewLoaded,
+                    getPlanText,
+                    getCompletedText,
+                    getCategoryColor,
+                    getStatusStyle,
+                    addTask,
+                    switchCategory,
+                    saveTaskName,
+                    updatePriority,
+                    moveTaskUp,
+                    moveTaskDown,
+                    toggleComplete,
+                    openPauseModal,
+                    closePauseModal,
+                    confirmPause,
+                    openDeleteModal,
+                    closeDeleteModal,
+                    confirmDelete,
+                    goPage,
+                    loadDailyTasks,
+                    loadPreview,
+                    updateWeekPlanContent,
+                    updateCoordItems,
+                    exportReport,
+                    recordWeek,
+                    recordWeekDays,
+                    recordWeekDisplay,
+                    remindText,
+                    todayReminds,
+                    addRemind,
+                    deleteRemind,
+                    saveReminds
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
