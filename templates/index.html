@@ -166,16 +166,8 @@
         .report-table textarea { width: 100%; min-height: 80px; border: 1px solid #ddd; border-radius: 4px; padding: 6px; font-size: 12px; resize: vertical; }
         .report-table textarea:focus { outline: none; border-color: #667eea; }
 
-        /* 周报容器 - 左右布局 */
-        .report-container { display: flex; gap: 20px; align-items: flex-start; }
-        .report-left { flex: 1; min-width: 0; }
-        .report-right { width: 350px; flex-shrink: 0; }
-
         /* 工时统计 */
-        .work-hours-section { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
-        .work-hours-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 15px; font-weight: bold; font-size: 15px; }
-        .work-hours-content { padding: 15px; }
-        .work-hours-section textarea { width: 100%; min-height: 400px; border: 2px solid #e0e0e0; border-radius: 8px; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; }
+        .work-hours-section textarea { width: 100%; min-height: 200px; border: 2px solid #e0e0e0; border-radius: 8px; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; }
         .work-hours-section textarea:focus { outline: none; border-color: #667eea; }
 
         /* 每日记录页面 */
@@ -421,59 +413,57 @@
                 </div>
 
                 <!-- 周报预览表格 -->
-                <div v-if="previewLoaded" class="report-container">
-                    <div class="report-left">
-                        <div class="report-preview">
-                            <table class="report-table">
-                                <tr class="title-row">
-                                    <td colspan="5">工作周报</td>
-                                </tr>
-                                <tr class="info-row">
-                                    <td>汇报人</td>
-                                    <td>王弯弯</td>
-                                    <td>汇报时间段</td>
-                                    <td colspan="2">[[ startDate ]] 至 [[ endDate ]]</td>
-                                </tr>
-                                <tr class="info-row">
-                                    <td>所属项目</td>
-                                    <td>河工大</td>
-                                    <td>提交时间</td>
-                                    <td colspan="2">[[ submitDate ]]</td>
-                                </tr>
-                                <tr class="header-row">
-                                    <th>工作分类</th>
-                                    <th>本周计划</th>
-                                    <th>本周完成情况</th>
-                                    <th>下周工作计划</th>
-                                    <th>待协调、支撑事项</th>
-                                </tr>
-                                <tr v-for="cat in reportCategories" :key="cat.name">
-                                    <td class="category-cell">[[ cat.name ]]</td>
-                                    <td class="edit-cell">
-                                        <textarea v-model="planEditContent[cat.name]" :placeholder="'本周' + cat.name + '计划...'"></textarea>
-                                    </td>
-                                    <td class="edit-cell">
-                                        <textarea v-model="completedEditContent[cat.name]" :placeholder="'本周完成情况...'"></textarea>
-                                    </td>
-                                    <td class="edit-cell">
-                                        <textarea v-model="weekPlanContent[cat.name]" :placeholder="'下周' + cat.name + '计划...'"></textarea>
-                                    </td>
-                                    <td class="edit-cell">
-                                        <textarea v-model="coordItems[cat.name]" :placeholder="'待协调事项...'"></textarea>
-                                    </td>
-                                </tr>
-                            </table>
-                            <div style="text-align:center;margin-top:20px;">
-                                <button class="btn-add" @click="exportReport">导出周报Excel</button>
-                            </div>
-                        </div>
+                <div v-if="previewLoaded" class="report-preview">
+                    <table class="report-table">
+                        <tr class="title-row">
+                            <td colspan="5">工作周报</td>
+                        </tr>
+                        <tr class="info-row">
+                            <td>汇报人</td>
+                            <td>王弯弯</td>
+                            <td>汇报时间段</td>
+                            <td colspan="2">[[ startDate ]] 至 [[ endDate ]]</td>
+                        </tr>
+                        <tr class="info-row">
+                            <td>所属项目</td>
+                            <td>河工大</td>
+                            <td>提交时间</td>
+                            <td colspan="2">[[ submitDate ]]</td>
+                        </tr>
+                        <tr class="header-row">
+                            <th>工作分类</th>
+                            <th>本周计划</th>
+                            <th>本周完成情况</th>
+                            <th>下周工作计划</th>
+                            <th>待协调、支撑事项</th>
+                        </tr>
+                        <tr v-for="cat in reportCategories" :key="cat.name">
+                            <td class="category-cell">[[ cat.name ]]</td>
+                            <td class="edit-cell">
+                                <textarea v-model="planEditContent[cat.name]" :placeholder="'本周' + cat.name + '计划...'"></textarea>
+                            </td>
+                            <td class="edit-cell">
+                                <textarea v-model="completedEditContent[cat.name]" :placeholder="'本周完成情况...'"></textarea>
+                            </td>
+                            <td class="edit-cell">
+                                <textarea v-model="weekPlanContent[cat.name]" :placeholder="'下周' + cat.name + '计划...'"></textarea>
+                            </td>
+                            <td class="edit-cell">
+                                <textarea v-model="coordItems[cat.name]" :placeholder="'待协调事项...'"></textarea>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="text-align:center;margin-top:20px;">
+                        <button class="btn-add" @click="exportReport">导出周报Excel</button>
                     </div>
-                    <div class="report-right">
-                        <div class="work-hours-section">
-                            <div class="work-hours-header">工时统计</div>
-                            <div class="work-hours-content">
-                                <textarea v-model="workHoursContent" placeholder="工时统计内容..."></textarea>
-                            </div>
+                </div>
+
+                <!-- 工时统计 -->
+                <div v-if="previewLoaded" class="work-hours-section" style="margin-top:30px;">
+                    <h2 style="font-size:18px;margin-bottom:15px;">工时统计</h2>
+                    <div class="task-input-area">
+                        <div class="task-input-row">
+                            <textarea v-model="workHoursContent" placeholder="工时统计内容..." style="width:100%;min-height:200px;font-size:14px;"></textarea>
                         </div>
                     </div>
                 </div>
