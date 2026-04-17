@@ -191,12 +191,15 @@
         @media (max-width: 1100px) { .week-grid { grid-template-columns: repeat(4, 1fr); } }
         @media (max-width: 600px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
 
-        /* 今日提醒页面 */
+        /* 事务提醒页面 */
         .remind-list { margin-top: 20px; }
+        .remind-group { margin-bottom: 20px; }
+        .remind-date-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 14px; }
         .remind-item {
-            background: white; border-radius: 10px; padding: 15px 20px;
-            margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            background: white; border-radius: 0 0 8px 8px; padding: 12px 15px;
+            margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             display: flex; align-items: center; justify-content: space-between;
+            border-left: 3px solid #667eea;
         }
         .remind-content { display: flex; align-items: center; gap: 12px; flex: 1; }
         .remind-content input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #667eea; }
@@ -228,7 +231,7 @@
             </div>
             <div class="nav-item" :class="{ active: currentPage === 'remind' }" @click="goPage('remind')">
                 <span class="nav-icon">🔔</span>
-                <span>今日提醒</span>
+                <span>事务提醒</span>
             </div>
         </aside>
 
@@ -375,27 +378,31 @@
                 </div>
             </div>
 
-            <!-- 今日提醒页 -->
+            <!-- 事务提醒页 -->
             <div v-if="currentPage === 'remind'">
-                <h1 class="page-title">今日提醒</h1>
+                <h1 class="page-title">事务提醒</h1>
                 <div class="task-input-area">
                     <div class="task-input-row">
+                        <input type="date" v-model="remindDate" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;">
                         <input type="text" v-model="remindText" placeholder="输入提醒内容..." style="flex:1;" @keydown.enter="addRemind">
                         <button class="btn-add" @click="addRemind">添加</button>
                     </div>
                 </div>
 
                 <div class="remind-list">
-                    <div v-if="todayReminds.length === 0" class="empty-state">
+                    <div v-if="allReminds.length === 0" class="empty-state">
                         <div class="empty-icon">🔔</div>
                         <p>暂无提醒</p>
                     </div>
-                    <div v-for="(item, index) in todayReminds" :key="item.id" class="remind-item">
-                        <div class="remind-content">
-                            <input type="checkbox" v-model="item.done" @change="saveReminds">
-                            <span :class="{ done: item.done }">[[ item.text ]]</span>
+                    <div v-for="(group, date) in groupedReminds" :key="date" class="remind-group">
+                        <div class="remind-date-header">[[ date ]]</div>
+                        <div v-for="(item, index) in group" :key="item.id" class="remind-item">
+                            <div class="remind-content">
+                                <input type="checkbox" v-model="item.done" @change="saveReminds">
+                                <span :class="{ done: item.done }">[[ item.text ]]</span>
+                            </div>
+                            <button class="action-btn delete" @click="deleteRemind(date, index)">❌</button>
                         </div>
-                        <button class="action-btn delete" @click="deleteRemind(index)">❌</button>
                     </div>
                 </div>
             </div>
@@ -543,31 +550,28 @@
                 const recordWeek = ref('');
                 const allTasks = ref([]);
 
-                // 今日提醒
+                // 事务提醒
                 const remindText = ref('');
-                const reminds = ref([]);
-
-                const getTodayKey = () => toLocalDateStr(new Date());
+                const remindDate = ref('');
+                const allReminds = ref({});  // { '2026-04-17': [{id, text, done}, ...] }
 
                 const loadReminds = () => {
                     const data = localStorage.getItem('dailyReminds');
-                    const all = data ? JSON.parse(data) : {};
-                    const today = getTodayKey();
-                    reminds.value = all[today] || [];
+                    allReminds.value = data ? JSON.parse(data) : {};
                 };
 
                 const saveReminds = () => {
-                    const data = localStorage.getItem('dailyReminds');
-                    const all = data ? JSON.parse(data) : {};
-                    const today = getTodayKey();
-                    all[today] = reminds.value;
-                    localStorage.setItem('dailyReminds', JSON.stringify(all));
+                    localStorage.setItem('dailyReminds', JSON.stringify(allReminds.value));
                 };
 
                 const addRemind = () => {
                     const text = remindText.value.trim();
                     if (!text) return;
-                    reminds.value.push({
+                    const date = remindDate.value || toLocalDateStr(new Date());
+                    if (!allReminds.value[date]) {
+                        allReminds.value[date] = [];
+                    }
+                    allReminds.value[date].push({
                         id: Date.now(),
                         text: text,
                         done: false
@@ -576,12 +580,25 @@
                     remindText.value = '';
                 };
 
-                const deleteRemind = (index) => {
-                    reminds.value.splice(index, 1);
+                const deleteRemind = (date, index) => {
+                    if (allReminds.value[date]) {
+                        allReminds.value[date].splice(index, 1);
+                        if (allReminds.value[date].length === 0) {
+                            delete allReminds.value[date];
+                        }
+                    }
                     saveReminds();
                 };
 
-                const todayReminds = computed(() => reminds.value);
+                // 按日期分组显示所有提醒
+                const groupedReminds = computed(() => {
+                    const groups = {};
+                    const sortedDates = Object.keys(allReminds.value).sort().reverse();
+                    sortedDates.forEach(date => {
+                        groups[date] = allReminds.value[date];
+                    });
+                    return groups;
+                });
 
                 // 计算属性
                 const filteredTasks = computed(() => {
@@ -1196,7 +1213,9 @@
                     recordWeekDays,
                     recordWeekDisplay,
                     remindText,
-                    todayReminds,
+                    remindDate,
+                    allReminds,
+                    groupedReminds,
                     addRemind,
                     deleteRemind,
                     saveReminds
